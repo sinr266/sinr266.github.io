@@ -1,0 +1,1654 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>节奏练习器</title>
+<style>
+  :root{
+    --bg:#0b0d12; --ink:#e9ecf3; --mut:#9aa3b6; --line:#24304a;
+    --btn:#0f1320; --btnH:#151b2d; --shadow:0 12px 40px rgba(0,0,0,.35);
+    --acc:#3a65ff;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:radial-gradient(1200px 600px at 30% -20%, #141a2d 0%, var(--bg) 55%);
+    color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,"Microsoft YaHei",sans-serif;
+  }
+  .wrap{max-width:1100px;margin:0 auto;padding:1px;display:flex;flex-direction:column;gap:1px}
+
+  button{
+    cursor:pointer;border:1px solid var(--line);
+    background:linear-gradient(180deg,var(--btnH),var(--btn));
+    color:var(--ink);border-radius:12px;
+    padding:1px 9px;font-weight:900;
+    transition:transform .05s ease, background .15s ease, border-color .15s ease;
+    user-select:none;font-size:12px;
+  }
+  button:hover{background:linear-gradient(180deg,#1a2240,#11182c);border-color:#334469}
+  button:active{transform:translateY(1px)}
+  button.icon{width:26px;height:26px;display:grid;place-items:center;padding:0;border-radius:12px}
+  button.icon svg{width:18px;height:18px;fill:currentColor}
+  button.primary{border-color:#2b4db6;background:linear-gradient(180deg,#203a8d,#141f4f)}
+  button.primary:hover{border-color:var(--acc)}
+  .pill{
+    border:1px solid var(--line);border-radius:999px;padding:6px 10px;
+    color:var(--mut);font-weight:900;background:linear-gradient(180deg,#10172b,#0d1220);
+    white-space:nowrap;font-size:12px;
+  }
+  .card{
+    background:linear-gradient(180deg,#121830,#0e1220);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:5px 12px;
+    box-shadow:var(--shadow);
+    display:flex;align-items:center;gap:10px;
+    flex-wrap:wrap;
+  }
+  .sp{flex:1}
+  .info .title{font-weight:950;letter-spacing:.5px}
+
+  .stage{position:relative}
+  canvas{
+    display:block;width:100%;height:auto;border-radius:16px;border:1px solid var(--line);
+    background:linear-gradient(180deg,#0a0f1a,#070a12);
+    box-shadow:var(--shadow);
+  }
+  .bigBeat{
+    position:absolute;left:0;right:0;top:6px;
+    display:none;justify-content:center;pointer-events:none;z-index:5;
+  }
+  .bigBeat .txt{
+    font-weight:1000;font-size:260px;letter-spacing:2px;
+    color:rgba(233,236,243,.18);
+    text-shadow:0 10px 40px rgba(0,0,0,.35);
+    line-height:1;
+  }
+
+  .editBar{justify-content:center;gap:8px}
+  .editBar button{min-width:30px}
+
+  .field{
+    display:flex;align-items:center;gap:8px;
+    border:1px solid var(--line);border-radius:12px;
+    padding:0px 0px;background:linear-gradient(180deg,#10172b,#0d1220);
+  }
+  input[type="number"]{
+    width:66px;
+    background:#0a0f1c;border:1px solid rgba(255,255,255,.08);
+    border-radius:10px;color:var(--ink);padding:6px 8px;outline:none;font-weight:900;
+  }
+  select{
+    background:#0a0f1c;border:1px solid rgba(255,255,255,.10);
+    color:var(--ink);border-radius:10px;
+    padding:6px 8px;font-weight:900;
+  }
+
+  .switch{
+    width:82px;height:30px;border-radius:999px;
+    border:1px solid rgba(255,255,255,.10);
+    background:linear-gradient(180deg,#0f162b,#0b1020);
+    position:relative;cursor:pointer;user-select:none;
+  }
+  .switch .knob{
+    position:absolute;top:1px;left:2px;
+    width:40px;height:26px;border-radius:999px;
+    background:linear-gradient(180deg,#1a2340,#11182d);
+    border:1px solid rgba(255,255,255,.10);
+    box-shadow:0 8px 18px rgba(0,0,0,.35);
+    transition:left .16s ease;
+  }
+  .switch .txt{
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 10px;font-weight:950;font-size:11px;
+    color:rgba(233,236,243,.85);
+    pointer-events:none;
+  }
+  .switch.on .knob{left:38px}
+
+  .fillZone{
+    min-height:56px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,.10);
+    background:rgba(255,255,255,.02);
+    padding:8px;
+    display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  }
+
+.playWide{
+  width:84px;
+  border-radius:16px;   /* 比普通 icon 更圆润 */
+}
+
+  .rpWrap{display:flex;gap:12px;flex-wrap:wrap}
+  .rpGroup{display:flex;gap:8px;flex-wrap:wrap}
+  .rpCard{
+    width:68px;height:22px;border-radius:12px;
+    border:1px solid rgba(255,255,255,.10);
+    background:linear-gradient(180deg, rgba(15,19,32,.9), rgba(10,14,28,.9));
+    display:flex;align-items:center;justify-content:center;
+    padding:0 10px;cursor:pointer;user-select:none;
+    transition:border-color .15s ease, background .15s ease, transform .05s ease;
+    position:relative;overflow:hidden;
+  }
+  .rpCard:hover{border-color:rgba(58,101,255,.60);background:linear-gradient(180deg, rgba(20,27,50,.9), rgba(12,18,34,.9))}
+  .rpCard:active{transform:translateY(1px)}
+  .rpSlots{flex:1;display:grid;height:100%;align-items:center}
+  .rpSlots.s4{grid-template-columns:repeat(4,1fr)}
+  .rpSlots.s3{grid-template-columns:repeat(3,1fr)}
+  .rpSlots.s2{grid-template-columns:repeat(2,1fr)}
+  .rpSlot{display:flex;align-items:center;justify-content:center}
+  .dot{width:9px;height:9px;border-radius:999px;background:rgba(233,236,243,.92)}
+  .dash{width:9px;height:3px;border-radius:999px;background:rgba(233,236,243,.72)}
+
+  .delX{
+    position:absolute;
+    right:6px; top:6px;
+    width:16px;height:16px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.14);
+    background:rgba(0,0,0,.25);
+    display:grid;place-items:center;
+    font-size:12px;
+    line-height:1;
+    color:rgba(233,236,243,.85);
+    cursor:pointer;
+    user-select:none;
+  }
+  .delX:hover{border-color:rgba(58,101,255,.7)}
+
+  .help{min-height:40px}
+  .help .msg{color:var(--mut);font-weight:900;font-size:12px}
+  .on{border-color:var(--acc)!important}
+
+  .subBox{
+    display:flex;align-items:center;gap:8px;
+    padding:0px 0px;border-radius:14px;
+    border:1px solid rgba(255,255,255,.08);
+    background:rgba(255,255,255,.02);
+  }
+  .subBox .n{min-width:26px;text-align:center;font-weight:950;color:rgba(233,236,243,.9)}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <!-- 1) Info -->
+  <div class="card info">
+    <div class="title" data-help="节奏练习器">节奏练习器</div>
+    <div class="sp"></div>
+    <div class="pill" id="pos" data-help="当前播放/选择位置">1:1.1</div>
+  </div>
+
+  <!-- 2) Canvas -->
+  <div class="stage card" style="padding:10px">
+    <div class="bigBeat" id="bigBeat"><div class="txt" id="bigBeatTxt">1</div></div>
+    <canvas id="score" width="980" height="420" data-help="鼓谱：点格子选择；点线附近可直接切换该轨；播放时禁止编辑"></canvas>
+  </div>
+
+ <!-- 折叠按钮 -->
+  <button id="toggleButton">展开黑板 &#8595;</button>
+
+  <!-- 折叠内容 -->
+  <div id="content" style="display: none;">
+   <!-- Hand-draw pad (minimal, left toolbar) -->
+<div style="display:flex;gap:1px;align-items:stretch">
+
+  <!-- 左侧工具栏（竖排） -->
+  <div style="display:flex;flex-direction:column;gap:2px">
+    <button id="penBtn">笔</button>
+    <button id="eraserBtn">擦</button>
+    <button id="clearPadBtn">清</button>
+  </div>
+
+  <!-- 右侧画布 -->
+  <canvas id="sketchPad" width="980" height="400"
+    style="flex:1;width:100%;height:auto;
+           border-radius:14px;
+           border:1px solid rgba(255,255,255,.12);
+           background:rgba(255,255,255,.02);
+           touch-action:none">
+  </canvas>
+
+</div>
+
+<script>
+(() => {
+  const c = document.getElementById("sketchPad");
+  const ctx = c.getContext("2d");
+  const penBtn = document.getElementById("penBtn");
+  const eraserBtn = document.getElementById("eraserBtn");
+  const clearBtn = document.getElementById("clearPadBtn");
+
+  let mode = "pen";
+  let down = false, px = 0, py = 0;
+
+  const setMode = (m) => {
+    mode = m;
+    penBtn.classList.toggle("on", m==="pen");
+    eraserBtn.classList.toggle("on", m==="eraser");
+  };
+  setMode("pen");
+
+  function pos(e){
+    const r = c.getBoundingClientRect();
+    const x = (e.clientX - r.left) * (c.width / r.width);
+    const y = (e.clientY - r.top ) * (c.height/ r.height);
+    return {x,y};
+  }
+
+  function strokeTo(x,y){
+    ctx.lineCap="round";
+    ctx.lineJoin="round";
+    if(mode==="eraser"){
+      ctx.globalCompositeOperation="destination-out";
+      ctx.lineWidth=18;
+      ctx.strokeStyle="rgba(0,0,0,1)";
+    }else{
+      ctx.globalCompositeOperation="source-over";
+      ctx.lineWidth=3;
+      ctx.strokeStyle="rgba(233,236,243,.95)";
+    }
+    ctx.beginPath();
+    ctx.moveTo(px,py);
+    ctx.lineTo(x,y);
+    ctx.stroke();
+    px=x; py=y;
+  }
+
+  c.addEventListener("pointerdown",(e)=>{
+    down = true;
+    c.setPointerCapture?.(e.pointerId);
+    const p = pos(e);
+    px=p.x; py=p.y;
+    strokeTo(px+0.01, py+0.01);
+  });
+
+  c.addEventListener("pointermove",(e)=>{
+    if(!down) return;
+    const p = pos(e);
+    strokeTo(p.x,p.y);
+  });
+
+  window.addEventListener("pointerup",()=> down=false);
+
+  penBtn.onclick = ()=>setMode("pen");
+  eraserBtn.onclick = ()=>setMode("eraser");
+  clearBtn.onclick = ()=> ctx.clearRect(0,0,c.width,c.height);
+})();
+</script>
+
+  </div>
+
+  <script>
+    // 获取折叠按钮和内容区域
+    const toggleButton = document.getElementById("toggleButton");
+    const content = document.getElementById("content");
+
+    // 切换显示和隐藏内容
+    toggleButton.onclick = function() {
+      if (content.style.display === "none") {
+        content.style.display = "block";
+        toggleButton.innerHTML = "折叠黑板 &#8593;";
+      } else {
+        content.style.display = "none";
+        toggleButton.innerHTML = "展开黑板 &#8595;";
+      }
+    };
+  </script>
+
+
+  <!-- 3) Edit -->
+  <div class="card editBar">
+    <button id="btnK" data-help="编辑轨：Kick（当前格）">K</button>
+    <button id="btnS" data-help="编辑轨：Snare（当前格）" class="on">S</button>
+    <button id="btnH" data-help="编辑轨：HiHat（当前格）">H</button>
+
+    <!-- 联/单（只在第一小节联动） -->
+    <button id="linkBtn" class="on" data-help="联=只要在第一小节编辑，会同步到其它小节对应位置；单=不联动">联</button>
+
+    <!-- 全/细 -->
+    <button id="subModeBtn" class="on" data-help="细分模式：全=全局统一；细=每拍单独">全</button>
+
+    <!-- 细分 +/- -->
+    <div class="subBox" data-help="细分 1–8（全/细取决于左侧按钮；按 +/- 时才会补满 HiHat）">
+      <button id="subMinus" class="icon" aria-label="细分减">
+        <svg viewBox="0 0 24 24"><path d="M5 11h14v2H5z"/></svg>
+      </button>
+      <div class="n" id="subN">2</div>
+      <button id="subPlus" class="icon" aria-label="细分加">
+        <svg viewBox="0 0 24 24"><path d="M11 5h2v14h-2zM5 11h14v2H5z"/></svg>
+      </button>
+    </div>
+  </div>
+
+
+  <!-- 4) Transport -->
+  <div class="card">
+    <button class="primary icon playWide" id="playBtn" aria-label="播放/暂停" data-help="播放 / 暂停">
+      <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l12-7z"/></svg>
+    </button>
+<style>
+  #playBtn {
+    width: 65px; /* 修改按钮的宽度 */
+  }
+</style>
+
+    <button class="icon" id="resetBtn" aria-label="回到最前" data-help="回到最前（并停）">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+  <!-- vertical bar -->
+  <rect x="5" y="5" width="2.2" height="14" rx="1.1"></rect>
+
+  <!-- left triangle -->
+  <path d="M19 5 L9 12 L19 19 Z"></path>
+</svg>
+
+    </button>
+
+    <!-- 预备拍 -->
+    <button class="icon" id="countInBtn" aria-label="预备拍" data-help="预备拍：播放前先走 4 个 Beat（只打节拍器，不走谱）">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+  <!-- 2x2 dots -->
+  <circle cx="7" cy="8" r="1.6"></circle>
+  <circle cx="11" cy="8" r="1.6"></circle>
+  <circle cx="7" cy="12" r="1.6"></circle>
+  <circle cx="11" cy="12" r="1.6"></circle>
+
+  <!-- two small vertical bars -->
+  <rect x="16.2" y="6.6" width="1.8" height="9.0" rx="0.9"></rect>
+  <rect x="19.2" y="6.6" width="1.8" height="9.0" rx="0.9"></rect>
+</svg>
+
+    </button>
+
+    <div class="field" data-help="BPM（40–250）">
+      <input id="bpm" type="number" min="40" max="250" value="80" aria-label="BPM">
+    </div>
+
+    <button class="icon on" id="metroBtn" aria-label="节拍器开关" data-help="节拍器开关（每拍开头）">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+  <!-- trapezoid base -->
+  <path d="M7 19 L17 19 L15 6 L9 6 Z"></path>
+
+  <!-- slanted needle -->
+  <line x1="12" y1="7" x2="15.5" y2="3.5"
+        stroke="currentColor"
+        stroke-width="1.6"
+        stroke-linecap="round"></line>
+</svg>
+
+    </button>
+
+
+
+    <button class="icon" id="bigBtn" aria-label="大字模式" data-help="大字模式：顶部半透明显示当前 Beat 数字">
+      <svg viewBox="0 0 24 24"><path d="M4 19h4l2-6h4l2 6h4L14 5h-4L4 19zm7.3-9L12 7.7 12.7 10h-1.4z"/></svg>
+    </button>
+
+
+    <!-- 保存按钮 -->
+    <button class="icon" id="saveBtn" aria-label="保存网页" data-help="保存当前谱面为新的网页（可离线打开，数据保留）">
+      <svg viewBox="0 0 24 24">
+        <path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7z"></path>
+        <path d="M17 3v4H7V3"></path>
+        <path d="M7 21v-8h10v8"></path>
+      </svg>
+    </button>
+
+    <div class="switch" id="cursorSwitch" role="switch" aria-checked="false" data-help="光标模式：跟随=每格走；逐拍=每拍跳">
+      <div class="txt"><span>跟随</span><span>逐拍</span></div>
+      <div class="knob"></div>
+    </div>
+
+    <!-- 出题 -->
+    <div class="field" data-help="出题：覆盖最后 N 拍；默认写入 Snare；并把使用卡片展示到 fillZone">
+      <select id="quizN" aria-label="出题 N 拍"></select>
+      <button id="quizModeBtn" data-help="出题模式：单=只保留军鼓（清空该拍 K/H）；多=不清空其他声部">单</button>
+      <button id="quizBtn" data-help="出题">出题</button>
+    </div>
+
+    <div class="sp"></div>
+    <span class="pill" id="state">就绪</span>
+  </div>
+
+  <!-- 5) FILL zone（有 X 删除按钮；不编辑谱） -->
+  <div class="fillZone card" id="fillZone" data-help="这里展示卡片。点右上角×删除；卡片本身不编辑谱"></div>
+
+  <!-- 6) Rhythm passwords -->
+  <div class="card" style="flex-wrap:wrap" data-help="节奏卡片：点击会写入当前轨，从当前格开始按位顺序写入，并向后跳相同位数">
+    <div class="rpWrap" style="width:100%">
+      <div class="rpGroup" id="cards2"></div>
+      <div class="rpGroup" id="cards3"></div>
+      <div class="rpGroup" id="cards4"></div>
+    </div>
+  </div>
+
+  <!-- 7) Help bar -->
+  <div class="card help">
+    <div class="msg" id="helpMsg"></div>
+    <div class="sp"></div>
+    <div class="pill" id="selPill">1:1.1</div>
+  </div>
+
+</div>
+
+<script>
+/*__STATE_JSON__*/null
+</script>
+
+<script>
+(() => {
+  // =============================
+  //  Config
+  // =============================
+  const BPM_MIN=40, BPM_MAX=250;
+  const MEASURES=4;
+  const BEATS_PER_MEASURE=4;
+  const TOTAL_BEATS = MEASURES * BEATS_PER_MEASURE; // 16
+  const SUB_MIN=1, SUB_MAX=8;
+
+  // =============================
+  //  DOM
+  // =============================
+  const score = document.getElementById("score");
+  const ctx = score.getContext("2d");
+
+  const posEl = document.getElementById("pos");
+  const stateEl = document.getElementById("state");
+  const bpmInp = document.getElementById("bpm");
+
+  const playBtn = document.getElementById("playBtn");
+  const playIcon = document.getElementById("playIcon");
+  const resetBtn = document.getElementById("resetBtn");
+  const countInBtn = document.getElementById("countInBtn");
+  const saveBtn = document.getElementById("saveBtn");
+
+  const metroBtn = document.getElementById("metroBtn");
+  const cursorSwitch = document.getElementById("cursorSwitch");
+  const bigBtn = document.getElementById("bigBtn");
+  const bigBeat = document.getElementById("bigBeat");
+  const bigBeatTxt = document.getElementById("bigBeatTxt");
+
+  const btnK = document.getElementById("btnK");
+  const btnS = document.getElementById("btnS");
+  const btnH = document.getElementById("btnH");
+
+  const linkBtn = document.getElementById("linkBtn");
+  const subModeBtn = document.getElementById("subModeBtn");
+  const subMinus = document.getElementById("subMinus");
+  const subPlus  = document.getElementById("subPlus");
+  const subN     = document.getElementById("subN");
+
+  const helpMsg = document.getElementById("helpMsg");
+  const selPill = document.getElementById("selPill");
+
+  const fillZone = document.getElementById("fillZone");
+  const cards2 = document.getElementById("cards2");
+  const cards3 = document.getElementById("cards3");
+  const cards4 = document.getElementById("cards4");
+
+  const quizN = document.getElementById("quizN");
+  const quizBtn = document.getElementById("quizBtn");
+  const quizModeBtn = document.getElementById("quizModeBtn");
+
+  // Hover help
+  const setHelp = (t)=> helpMsg.textContent = t || "";
+  document.querySelectorAll("[data-help]").forEach(el=>{
+    el.addEventListener("mouseenter", ()=>setHelp(el.getAttribute("data-help")));
+    el.addEventListener("mouseleave", ()=>setHelp(""));
+  });
+
+  const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi, v|0));
+
+  // =============================
+  //  Link mode: 只在第一小节联动
+  // =============================
+  let linkOn = true;
+  function syncLinkUI(){
+    linkBtn.textContent = linkOn ? "联" : "单";
+    linkBtn.classList.toggle("on", linkOn);
+  }
+  linkBtn.addEventListener("click", ()=>{
+    linkOn = !linkOn;
+    syncLinkUI();
+  });
+
+  function inFirstMeasure(beatIndex){
+    return beatIndex >= 0 && beatIndex < BEATS_PER_MEASURE; // 0..3
+  }
+  function linkedBeatsFor(beatIndex){
+    if(!linkOn) return [beatIndex];
+    if(!inFirstMeasure(beatIndex)) return [beatIndex];
+    return [beatIndex, beatIndex+4, beatIndex+8, beatIndex+12];
+  }
+
+  // =============================
+  //  Subdiv model
+  // =============================
+  let subMode = "global"; // "global" | "perBeat"
+  let globalSub = 2;
+  let subByBeat = Array.from({length: TOTAL_BEATS}, ()=>2);
+  const getSub = (beatIndex)=> (subMode==="global" ? globalSub : subByBeat[beatIndex]);
+
+  // =============================
+  //  Score data
+  // =============================
+  const makeCell = ()=>({K:0,S:0,H:0});
+  let beatData = Array.from({length: TOTAL_BEATS}, ()=> Array.from({length:2}, ()=>makeCell()));
+
+  // ✅ 只有按 +/- 改细分时才 fillHat=true
+  function setBeatSubdiv(beatIndex, newN, fillHat=false){
+    newN = clamp(newN, SUB_MIN, SUB_MAX);
+    const old = beatData[beatIndex];
+    const oldN = old?.length || 0;
+    if(oldN === newN) return;
+
+    const neu = Array.from({length:newN}, ()=>makeCell());
+
+    for(let s=0;s<oldN;s++){
+      const ns = Math.floor(s * newN / Math.max(1,oldN));
+      const tgt = neu[ns];
+      const src = old[s];
+      tgt.K = tgt.K || src.K;
+      tgt.S = tgt.S || src.S;
+      tgt.H = tgt.H || src.H;
+    }
+    if(fillHat){
+      for(let i=0;i<newN;i++) neu[i].H = 1;
+    }
+    beatData[beatIndex] = neu;
+  }
+
+  function remapSelectionWithinBeat(oldN, newN){
+    if(oldN<=0) return;
+    selSub = Math.min(newN-1, Math.floor(selSub * newN / oldN));
+  }
+
+  function applySubdivChange(newN){
+    newN = clamp(newN, SUB_MIN, SUB_MAX);
+
+    if(subMode==="global"){
+      const old = globalSub;
+      globalSub = newN;
+      for(let b=0;b<TOTAL_BEATS;b++){
+        subByBeat[b] = globalSub;
+        setBeatSubdiv(b, globalSub, true);
+      }
+      remapSelectionWithinBeat(old, globalSub);
+      return;
+    }
+
+    // perBeat：如果在第一小节且联动 → 同步四个小节对应拍
+    const targets = linkedBeatsFor(selBeat);
+    const old = beatData[selBeat].length;
+
+    for(const b of targets){
+      subByBeat[b] = newN;
+      setBeatSubdiv(b, newN, true);
+    }
+    remapSelectionWithinBeat(old, newN);
+  }
+
+  // =============================
+  //  Default groove
+  // =============================
+  function applyDefaultGroove(){
+    for(let b=0;b<TOTAL_BEATS;b++){
+      for(const c of beatData[b]) c.H = 1;
+    }
+    for(let m=0;m<MEASURES;m++){
+      for(let beat=0; beat<BEATS_PER_MEASURE; beat++){
+        const bi = m*BEATS_PER_MEASURE + beat;
+        if(beat===0 || beat===2) beatData[bi][0].K = 1;
+        if(beat===1 || beat===3) beatData[bi][0].S = 1;
+      }
+    }
+  }
+
+  // =============================
+  //  Selection & Cursor
+  // =============================
+  let selBeat = 0;
+  let selSub  = 0;
+
+  let playBeat = 0, playSub = 0;
+  let cursorBeat=0, cursorSub=0;
+
+  let running = false;
+  let cursorMode = "follow"; // follow | beat
+  let bigOn = true;
+  let metroOn = true;
+
+  // count-in
+  let countInOn = true;
+
+  // active track for card write
+  let activeTrack = "S"; // "K" | "S" | "H"
+  function syncTrackUI(){
+    btnK.classList.toggle("on", activeTrack==="K");
+    btnS.classList.toggle("on", activeTrack==="S");
+    btnH.classList.toggle("on", activeTrack==="H");
+  }
+
+  // =============================
+  //  Quiz Mode: 单/多
+  // =============================
+  let quizMode = "single"; // "single" | "multi"
+  function syncQuizModeUI(){
+    quizModeBtn.textContent = (quizMode==="single" ? "单" : "多");
+    quizModeBtn.classList.toggle("on", quizMode==="single");
+  }
+  quizModeBtn.addEventListener("click", ()=>{
+    quizMode = (quizMode==="single") ? "multi" : "single";
+    syncQuizModeUI();
+  });
+
+  // =============================
+  //  Rhythm cards
+  // =============================
+  const patterns2 = ["10","01","11","00"];
+  const patterns3 = ["100","010","001","110","011","101","000","111"];
+  const patterns4 = [
+    "1000","0100","0010","0001",
+    "1100","0110","0011","1001","1010","0101",
+    "1110","1011","1101","0111",
+    "1111","0000"
+  ];
+  const randPick = (arr)=> arr[Math.floor(Math.random()*arr.length)];
+
+  const dot = ()=>{ const d=document.createElement("div"); d.className="dot"; return d; };
+  const dash= ()=>{ const d=document.createElement("div"); d.className="dash";return d; };
+
+  function makeCard(bits){
+    const card=document.createElement("div");
+    card.className="rpCard";
+    card.dataset.bits=bits;
+
+    const slots=document.createElement("div");
+    slots.className="rpSlots "+(bits.length===4?"s4":bits.length===3?"s3":"s2");
+    for(const ch of bits){
+      const s=document.createElement("div");
+      s.className="rpSlot";
+      s.appendChild(ch==="1"?dot():dash());
+      slots.appendChild(s);
+    }
+    card.appendChild(slots);
+
+    // 点击下方卡片：写谱 + 跳格 + (可选)联动
+    card.addEventListener("click", ()=>{
+      applyCardSequence(bits);
+      draw();
+    });
+
+    return card;
+  }
+
+  function buildCards(){
+    cards2.innerHTML=""; cards3.innerHTML=""; cards4.innerHTML="";
+    patterns2.forEach(p=>cards2.appendChild(makeCard(p)));
+    patterns3.forEach(p=>cards3.appendChild(makeCard(p)));
+    patterns4.forEach(p=>cards4.appendChild(makeCard(p)));
+  }
+
+  // =============================
+  //  FillZone（32张；有 X 删除；不编辑谱）
+  // =============================
+  let fillArr = [];
+  const FILL_MAX = 32;
+
+  function addToFill(bits, {clear=false}={}){
+    if(clear) fillArr = [];
+    if(fillArr.length < FILL_MAX) fillArr.push(bits);
+    else { fillArr.shift(); fillArr.push(bits); }
+    renderFill();
+  }
+  function removeFillAt(i){
+    fillArr.splice(i,1);
+    renderFill();
+  }
+  function renderFill(){
+    fillZone.innerHTML="";
+    fillArr.forEach((bits, idx)=>{
+      const c=document.createElement("div");
+      c.className="rpCard";
+      c.dataset.bits=bits;
+
+      const slots=document.createElement("div");
+      slots.className="rpSlots "+(bits.length===4?"s4":bits.length===3?"s3":"s2");
+      for(const ch of bits){
+        const s=document.createElement("div");
+        s.className="rpSlot";
+        s.appendChild(ch==="1"?dot():dash());
+        slots.appendChild(s);
+      }
+      c.appendChild(slots);
+
+      const x=document.createElement("div");
+      x.className="delX";
+      x.textContent="×";
+      x.title="删除";
+      x.addEventListener("click",(e)=>{
+        e.stopPropagation();
+        removeFillAt(idx);
+      });
+      c.appendChild(x);
+
+      fillZone.appendChild(c);
+    });
+  }
+
+  // =============================
+  //  卡片顺序写入：从当前格开始按位写入，写几位就向后跳几格
+  //  ●=1 有，—=0 无
+  //  只写 activeTrack；不改细分；不铺满 H
+  //  如果联动且在第一小节：对其它小节对应 beat/sub 同步写入（仅在同一“相对位置”）
+  // =============================
+  function advanceOneStep(beat, sub){
+    const n = getSub(beat);
+    sub++;
+    if(sub >= n){
+      sub = 0;
+      beat = (beat + 1) % TOTAL_BEATS;
+    }
+    return {beat, sub};
+  }
+
+  function ensureBeatShape(beat){
+    const n = getSub(beat);
+    if(!beatData[beat] || beatData[beat].length !== n){
+      setBeatSubdiv(beat, n, false);
+    }
+  }
+
+  function writeBitAt(beat, sub, track, bit){
+    ensureBeatShape(beat);
+    beatData[beat][sub][track] = (bit==="1") ? 1 : 0;
+  }
+
+  function applyCardSequence(bits){
+    if(running) return;
+
+    // 主写入从当前选择开始
+    let b0 = selBeat;
+    let s0 = selSub;
+
+    // 联动：只在第一小节才启用
+    const doLink = linkOn && inFirstMeasure(selBeat);
+
+    // 对每一位，写入并推进
+    for(let i=0;i<bits.length;i++){
+      const bit = bits[i];
+
+      // 主
+      writeBitAt(b0, s0, activeTrack, bit);
+
+      // 联动：把“当前格”的相对位置同步到其它小节
+      if(doLink){
+        const relBeat = b0; // 因为只会在第一小节内联动时才开始
+        // 注意：如果推进后跨出第一小节，联动自然停止（不再写其它小节）
+        if(inFirstMeasure(relBeat)){
+          const tBeats = [relBeat+4, relBeat+8, relBeat+12];
+          for(const tb of tBeats){
+            // tb 的 subdiv 可能不同：我们按“同一个 subIndex”写入（超出则忽略）
+            ensureBeatShape(tb);
+            if(s0 < beatData[tb].length){
+              beatData[tb][s0][activeTrack] = (bit==="1") ? 1 : 0;
+            }
+          }
+        }
+      }
+
+      const nxt = advanceOneStep(b0, s0);
+      b0 = nxt.beat; s0 = nxt.sub;
+    }
+
+    // 光标跳到写完后的下一个格
+    selBeat = b0;
+    selSub  = s0;
+    updatePos(false);
+  }
+
+  // =============================
+  //  出题：覆盖最后 1..N 拍（只写 Snare）
+  //  + 单模式：清空这些拍子的 K/H
+  //  + 出题后 fillZone 清空并展示本次卡片
+  //  + 临时 activeTrack="S" 后恢复
+  //  + 出题结束光标回到 1:1.1
+  // =============================
+  function buildBitsAndCardsForSubdiv(n){
+    if(n<=1){
+      const b = (Math.random()<0.7) ? "1" : "0";
+      return { bits: b, cards: [b] };
+    }
+    if(n===2){
+      const c = randPick(patterns2);
+      return { bits: c, cards: [c] };
+    }
+    if(n===3){
+      const c = randPick(patterns3);
+      return { bits: c, cards: [c] };
+    }
+    if(n===4){
+      const c = randPick(patterns4);
+      return { bits: c, cards: [c] };
+    }
+    if(n===5){
+      const c2 = randPick(patterns2);
+      const c3 = randPick(patterns3);
+      return { bits: c2 + c3, cards: [c2, c3] };
+    }
+    if(n===6){
+      const c31 = randPick(patterns3);
+      const c32 = randPick(patterns3);
+      return { bits: c31 + c32, cards: [c31, c32] };
+    }
+    if(n===7){
+      const c4 = randPick(patterns4);
+      const c3 = randPick(patterns3);
+      return { bits: c4 + c3, cards: [c4, c3] };
+    }
+    const c41 = randPick(patterns4);
+    const c42 = randPick(patterns4);
+    return { bits: c41 + c42, cards: [c41, c42] };
+  }
+
+  function applyBitsToBeatSnare(beatIndex, bits){
+    ensureBeatShape(beatIndex);
+    const n = getSub(beatIndex);
+    for(let i=0;i<n;i++){
+      const bit = bits[i] || "0";
+      beatData[beatIndex][i].S = (bit==="1") ? 1 : 0;
+    }
+  }
+
+  function clearOtherVoicesOnBeat(beatIndex){
+    ensureBeatShape(beatIndex);
+    for(const cell of beatData[beatIndex]){
+      cell.K = 0;
+      cell.H = 0;
+    }
+  }
+
+  function makeQuiz(){
+    if(running) return;
+
+    const N = clamp(+quizN.value, 1, TOTAL_BEATS);
+    const startBeat = TOTAL_BEATS - N;
+    const endBeat = TOTAL_BEATS - 1;
+
+    const prevTrack = activeTrack;
+    activeTrack = "S";
+    syncTrackUI();
+
+    // 清空 fillZone，仅展示本次卡片
+    addToFill("00", {clear:true}); // hack: 清空
+    fillArr = [];
+    renderFill();
+
+    for(let b = startBeat; b <= endBeat; b++){
+      const sub = getSub(b);
+      const { bits, cards } = buildBitsAndCardsForSubdiv(sub);
+
+      applyBitsToBeatSnare(b, bits);
+
+      if(quizMode === "single"){
+        clearOtherVoicesOnBeat(b);
+      }
+
+      for(const c of cards){
+        addToFill(c, {clear:false});
+      }
+    }
+
+    // 恢复轨道
+    activeTrack = prevTrack;
+    syncTrackUI();
+
+    // ✅ 出题结束：光标回到第一小节第一拍第一格
+    selBeat = 0; selSub = 0;
+    cursorBeat = 0; cursorSub = 0;
+    updatePos(false);
+    draw();
+  }
+
+  // =============================
+  //  Audio (simple drums + metronome)
+  // =============================
+  let audio=null, master=null;
+  function ensureAudio(){
+    if(audio) return;
+    audio = new (window.AudioContext||window.webkitAudioContext)({latencyHint:"interactive"});
+    master = audio.createGain();
+    master.gain.value = 0.9;
+    master.connect(audio.destination);
+  }
+
+  const clickBufCache = new Map();
+  function makeClickBuf(freq,ms){
+    ensureAudio();
+    const sr=audio.sampleRate;
+    const n=Math.max(1,Math.floor(sr*(ms/1000)));
+    const buf=audio.createBuffer(1,n,sr);
+    const d=buf.getChannelData(0);
+    const atk=Math.max(1,Math.floor(0.002*sr));
+    const dec=Math.max(1,Math.floor(0.020*sr));
+    const end=Math.min(dec,n);
+    const w=2*Math.PI*freq/sr;
+    let ph=0;
+    for(let i=0;i<n;i++){
+      let env= (i<atk) ? (i/atk) : (i<end ? Math.exp(-6*(i-atk)/Math.max(1,end-atk)) : 0);
+      d[i]=Math.sin(ph)*env*0.45;
+      ph+=w;
+    }
+    return buf;
+  }
+  function clickAt(t,freq,ms,amp=0.8){
+    if(!metroOn) return;
+    ensureAudio();
+    const key=freq+","+ms;
+    let b=clickBufCache.get(key);
+    if(!b){ b=makeClickBuf(freq,ms); clickBufCache.set(key,b); }
+    const src=audio.createBufferSource();
+    src.buffer=b;
+    const g=audio.createGain();
+    g.gain.value=amp;
+    src.connect(g).connect(master);
+    src.start(t);
+  }
+
+  function kickAt(t, amp=1.0){
+    ensureAudio();
+    const o=audio.createOscillator();
+    const g=audio.createGain();
+    o.type="sine";
+    o.frequency.setValueAtTime(150,t);
+    o.frequency.exponentialRampToValueAtTime(55,t+0.08);
+    g.gain.setValueAtTime(amp*0.9,t);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.12);
+    o.connect(g).connect(master);
+    o.start(t); o.stop(t+0.14);
+  }
+  function noiseNode(){
+    const len = Math.floor(audio.sampleRate*0.2);
+    const buf = audio.createBuffer(1,len,audio.sampleRate);
+    const d = buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i] = (Math.random()*2-1)*0.9;
+    const src=audio.createBufferSource();
+    src.buffer=buf;
+    return src;
+  }
+  function snareAt(t, amp=0.8){
+    ensureAudio();
+    const n=noiseNode();
+    const bp=audio.createBiquadFilter();
+    bp.type="bandpass"; bp.frequency.value=1800; bp.Q.value=0.7;
+    const g=audio.createGain();
+    g.gain.setValueAtTime(amp*0.7,t);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.12);
+    n.connect(bp).connect(g).connect(master);
+    n.start(t); n.stop(t+0.13);
+  }
+  function hatAt(t, amp=0.5){
+    ensureAudio();
+    const n=noiseNode();
+    const hp=audio.createBiquadFilter();
+    hp.type="highpass"; hp.frequency.value=6500; hp.Q.value=0.7;
+    const g=audio.createGain();
+    g.gain.setValueAtTime(amp*0.45,t);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.06);
+    n.connect(hp).connect(g).connect(master);
+    n.start(t); n.stop(t+0.07);
+  }
+
+  // =============================
+  //  Scheduler
+  // =============================
+  const LOOKAHEAD = 0.08;
+  const TICK = 0.016;
+  let timer = null;
+  let nextT = 0;
+
+  const getBpm = ()=>clamp(+bpmInp.value, BPM_MIN, BPM_MAX);
+  function secondsPerBeat(){ return 60/getBpm(); }
+  function secondsPerStep(beatIndex){
+    return secondsPerBeat() / getSub(beatIndex);
+  }
+
+  // count-in state
+  let inCountIn=false, countLeft=0, countNextT=0;
+
+  function start(){
+    ensureAudio(); audio.resume?.();
+    if(running) return;
+    running=true;
+    stateEl.textContent="播放";
+    playIcon.innerHTML = '<path d="M7 6h4v12H7zM13 6h4v12h-4z"/>';
+
+    const now = audio.currentTime;
+
+    if(countInOn){
+      inCountIn=true;
+      countLeft=4;
+      countNextT=now;
+      nextT = now;
+      stateEl.textContent="预…";
+    }else{
+      inCountIn=false;
+      nextT = now;
+      stateEl.textContent="播放";
+    }
+
+    timer = setInterval(scheduler, TICK*1000);
+  }
+
+  function pause(){
+    if(!running) return;
+    running=false;
+    inCountIn=false;
+    stateEl.textContent="就绪";
+    playIcon.innerHTML = '<path d="M8 5v14l12-7z"/>';
+    if(timer){clearInterval(timer); timer=null;}
+  }
+
+  function reset(){
+    pause();
+    playBeat=0; playSub=0;
+    cursorBeat=0; cursorSub=0;
+    selBeat=0; selSub=0;
+    updatePos(false);
+    draw();
+  }
+
+  function scheduler(){
+    if(!running || !audio) return;
+    const now = audio.currentTime;
+
+    if(inCountIn){
+      while(countLeft>0 && countNextT < now + LOOKAHEAD){
+        if(metroOn) clickAt(countNextT, 2500, 10, 0.65);
+        countLeft--;
+        countNextT += secondsPerBeat();
+      }
+      if(countLeft<=0){
+        inCountIn=false;
+        nextT = countNextT;
+        stateEl.textContent="播放";
+      }
+      return;
+    }
+
+    while(nextT < now + LOOKAHEAD){
+      const b = playBeat;
+      const s = playSub;
+      const isBeatStart = (s===0);
+
+      if(metroOn && isBeatStart) clickAt(nextT, 2500, 10, 0.6);
+
+      const cell = beatData[b]?.[s];
+      if(cell){
+        if(cell.K) kickAt(nextT, 0.9);
+        if(cell.S) snareAt(nextT, 0.75);
+        if(cell.H) hatAt(nextT, 0.45);
+      }
+
+      const uiBeat = b;
+      const uiSub = (cursorMode==="beat") ? 0 : s;
+
+      const dt = Math.max(0, nextT - now);
+      setTimeout(()=>{
+        cursorBeat = uiBeat;
+        cursorSub = uiSub;
+        draw();
+        updatePos(true);
+      }, dt*1000);
+
+      playSub++;
+      const n = getSub(playBeat);
+      if(playSub >= n){
+        playSub = 0;
+        playBeat = (playBeat + 1) % TOTAL_BEATS;
+      }
+      nextT += secondsPerStep(b);
+    }
+  }
+
+  // =============================
+  //  Drawing
+  // =============================
+  let geom=null;
+
+  function bpmColor(bpm){
+    const t=(bpm-BPM_MIN)/(BPM_MAX-BPM_MIN);
+    const r=Math.round( 30 + t*(220-30) );
+    const g=Math.round( 200 + t*(60-200) );
+    const b=Math.round( 80 + t*(60-80) );
+    return `rgb(${r},${g},${b})`;
+  }
+
+  function computeGeom(){
+    const W=score.width, H=score.height;
+    const rows=2, measuresPerRow=2;
+    const padL=72, padR=26, padT=22, padB=22;
+    const innerW=W-padL-padR;
+    const innerH=H-padT-padB;
+
+    const rowH=innerH/rows;
+    const measureW=innerW/measuresPerRow;
+    const beatW = measureW/BEATS_PER_MEASURE;
+
+    const lineGap = Math.min(42, Math.max(30, rowH*0.24));
+    const staffTop = (rowIndex)=> padT + rowIndex*rowH + Math.max(14, (rowH - lineGap*2)/2 - 4);
+
+    const yHat  = (r)=> staffTop(r) + lineGap*0;
+    const ySnare= (r)=> staffTop(r) + lineGap*1;
+    const yKick = (r)=> staffTop(r) + lineGap*2;
+
+    const noteR=6;
+    return {W,H,rows,measuresPerRow,padL,padR,padT,padB,rowH,measureW,beatW,yHat,ySnare,yKick,noteR};
+  }
+
+  function roundRect(c, x,y,w,h,r,fill,stroke){
+    c.beginPath();
+    c.moveTo(x+r,y);
+    c.arcTo(x+w,y,x+w,y+h,r);
+    c.arcTo(x+w,y+h,x,y+h,r);
+    c.arcTo(x,y+h,x,y,r);
+    c.arcTo(x,y,x+w,y,r);
+    c.closePath();
+    if(fill) c.fill();
+    if(stroke) c.stroke();
+  }
+
+  function drawStaff(row, x1, x2){
+    const y1 = geom.yHat(row);
+    const y2 = geom.ySnare(row);
+    const y3 = geom.yKick(row);
+    ctx.strokeStyle="rgba(233,236,243,.18)";
+    ctx.lineWidth=2;
+    [y1,y2,y3].forEach(y=>{
+      ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2, y); ctx.stroke();
+    });
+  }
+
+  function drawDot(x,y,on){
+    if(!on) return;
+    ctx.fillStyle="rgba(233,236,243,.92)";
+    ctx.beginPath();
+    ctx.arc(x,y, geom.noteR, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  function drawX(x, y, diameter){
+    const d = Math.max(2, diameter);
+    const rr = d/2;
+    ctx.save();
+    ctx.strokeStyle = "rgba(233,236,243,.55)";
+    ctx.lineWidth = Math.max(2, d * 0.22);
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(x - rr, y - rr);
+    ctx.lineTo(x + rr, y + rr);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x - rr, y + rr);
+    ctx.lineTo(x + rr, y - rr);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function stepX(beatIndex, subIndex){
+    const {padL, measureW, beatW} = geom;
+    const beatsPerRow = BEATS_PER_MEASURE*2; // 8
+    const r = Math.floor(beatIndex / beatsPerRow);
+    const inRow = beatIndex % beatsPerRow;
+    const mi = Math.floor(inRow / BEATS_PER_MEASURE);
+    const beatInMeasure = inRow % BEATS_PER_MEASURE;
+
+    const x1 = padL + mi*measureW + beatInMeasure*beatW;
+    const n = getSub(beatIndex);
+    const cellW = beatW / n;
+    const leftPad = Math.min(10, cellW * 0.10);
+    return x1 + subIndex*cellW + leftPad;
+  }
+
+  function draw(){
+    geom = computeGeom();
+    const {W,H,padL,padT,rows,measuresPerRow,rowH,measureW,beatW} = geom;
+
+    ctx.clearRect(0,0,W,H);
+    const bg = ctx.createRadialGradient(W*0.35,H*0.2,20,W*0.5,H*0.6,W);
+    bg.addColorStop(0,"#0e1426"); bg.addColorStop(1,"#070a12");
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+    ctx.strokeStyle="rgba(255,255,255,.10)";
+    ctx.lineWidth=2;
+    roundRect(ctx, 10,10, W-20,H-20, 14, false, true);
+
+    for(let r=0;r<rows;r++){
+      const top = padT + r*rowH;
+      const left= padL;
+
+      for(let mi=0; mi<measuresPerRow; mi++){
+        const measureIndex = r*measuresPerRow + mi;
+        const x1 = left + mi*measureW;
+        const x2 = x1 + measureW;
+
+        ctx.fillStyle="rgba(233,236,243,.55)";
+        ctx.font="14px system-ui";
+        ctx.textAlign="right"; ctx.textBaseline="middle";
+        ctx.fillText(String(measureIndex+1), x1-0, top + rowH*0.14);
+
+        drawStaff(r, x1, x2);
+
+        // barlines
+        ctx.strokeStyle="rgba(255,255,255,.14)";
+        ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(x1, top+8); ctx.lineTo(x1, top+rowH-8); ctx.stroke();
+        if(mi===measuresPerRow-1){
+          ctx.beginPath(); ctx.moveTo(x2, top+8); ctx.lineTo(x2, top+rowH-8); ctx.stroke();
+        }
+
+        // beat lines
+        for(let b=0;b<=BEATS_PER_MEASURE;b++){
+          const xb = x1 + (b/BEATS_PER_MEASURE)*measureW;
+          ctx.strokeStyle="rgba(255,255,255,.08)";
+          ctx.lineWidth=1;
+          ctx.beginPath(); ctx.moveTo(xb, top + rowH*0.12); ctx.lineTo(xb, top + rowH*0.88); ctx.stroke();
+        }
+
+        for(let beatInMeasure=0; beatInMeasure<BEATS_PER_MEASURE; beatInMeasure++){
+          const beatIndex = measureIndex*BEATS_PER_MEASURE + beatInMeasure;
+          const bx1 = x1 + beatInMeasure*beatW;
+          const n = getSub(beatIndex);
+
+          // sub-lines
+          ctx.strokeStyle="rgba(255,255,255,.06)";
+          ctx.lineWidth=1;
+          for(let s=1;s<n;s++){
+            const xs = bx1 + (s/n)*beatW;
+            ctx.beginPath(); ctx.moveTo(xs, top + rowH*0.16); ctx.lineTo(xs, top + rowH*0.84); ctx.stroke();
+          }
+
+          // cursor
+          if(beatIndex===cursorBeat){
+            const c = bpmColor(getBpm());
+            ctx.save();
+            ctx.globalAlpha=0.16;
+            ctx.fillStyle=c;
+            ctx.fillRect(bx1+1, top+10, beatW-2, rowH-20);
+            ctx.restore();
+
+            const cx = stepX(beatIndex, cursorSub);
+            ctx.strokeStyle=c; ctx.lineWidth=3;
+            ctx.beginPath(); ctx.moveTo(cx, top+14); ctx.lineTo(cx, top+rowH-14); ctx.stroke();
+          }
+
+          // selection
+          if(beatIndex===selBeat){
+            const sx = stepX(beatIndex, selSub);
+            ctx.save();
+            ctx.globalAlpha=0.10;
+            ctx.fillStyle="rgba(58,101,255,1)";
+            ctx.fillRect(sx-14, top+14, 28, rowH-28);
+            ctx.restore();
+            ctx.strokeStyle="rgba(58,101,255,.7)";
+            ctx.lineWidth=2;
+            roundRect(ctx, sx-14, top+14, 28, rowH-28, 10, false, true);
+          }
+
+          // notes
+          for(let s=0;s<n;s++){
+            const x = stepX(beatIndex, s);
+            const cell = beatData[beatIndex]?.[s];
+            if(!cell) continue;
+
+            drawDot(x, geom.yKick(r),  cell.K);
+            drawDot(x, geom.ySnare(r), cell.S);
+            if(cell.H) drawX(x, geom.yHat(r), geom.noteR*2);
+          }
+        }
+      }
+    }
+
+    if(bigOn){
+      const beatInMeasure = (cursorBeat % BEATS_PER_MEASURE) + 1;
+      bigBeatTxt.textContent = String(beatInMeasure);
+    }
+
+    subN.textContent = String(subMode==="global" ? globalSub : getSub(selBeat));
+    subModeBtn.textContent = (subMode==="global" ? "全" : "细");
+    subModeBtn.classList.toggle("on", subMode==="global");
+  }
+
+  // =============================
+  //  Hit test & direct toggle
+  // =============================
+  function hitTest(mx,my){
+    if(!geom) geom = computeGeom();
+    const {padL,padT,rows,measuresPerRow,rowH,measureW,beatW} = geom;
+
+    for(let r=0;r<rows;r++){
+      const top = padT + r*rowH;
+      if(my < top || my > top+rowH) continue;
+
+      for(let mi=0; mi<measuresPerRow; mi++){
+        const measureIndex = r*measuresPerRow + mi;
+        const x1 = padL + mi*measureW;
+        const x2 = x1 + measureW;
+        if(mx < x1 || mx > x2) continue;
+
+        const inMeasureX = mx - x1;
+        let beatInMeasure = Math.floor(inMeasureX / beatW);
+        beatInMeasure = Math.max(0, Math.min(BEATS_PER_MEASURE-1, beatInMeasure));
+        const beatIndex = measureIndex*BEATS_PER_MEASURE + beatInMeasure;
+
+        const bx1 = x1 + beatInMeasure*beatW;
+        const relBeatX = mx - bx1;
+        const n = getSub(beatIndex);
+        let sub = Math.floor(relBeatX / (beatW/n));
+        sub = Math.max(0, Math.min(n-1, sub));
+
+        const yHat = geom.yHat(r);
+        const ySn  = geom.ySnare(r);
+        const yKi  = geom.yKick(r);
+
+        const distHat = Math.abs(my - yHat);
+        const distSn  = Math.abs(my - ySn);
+        const distKi  = Math.abs(my - yKi);
+
+        let track = null;
+        const min = Math.min(distHat, distSn, distKi);
+        if(min <= 16){
+          track = (min===distHat) ? "H" : (min===distSn ? "S" : "K");
+        }
+
+        return {beatIndex, sub, track};
+      }
+    }
+    return null;
+  }
+
+  function toggleCell(beatIndex, subIndex, track){
+    ensureBeatShape(beatIndex);
+    const cell = beatData[beatIndex][subIndex];
+    cell[track] = cell[track] ? 0 : 1;
+  }
+
+  score.addEventListener("mousedown",(e)=>{
+    if(running) return;
+    const rect=score.getBoundingClientRect();
+    const mx=(e.clientX-rect.left)*(score.width/rect.width);
+    const my=(e.clientY-rect.top )*(score.height/rect.height);
+    const hit = hitTest(mx,my);
+    if(!hit) return;
+
+    selBeat = hit.beatIndex;
+    selSub  = hit.sub;
+
+    // click on track line toggles directly
+if(hit.track){
+  // ✅ 1) 点亮编辑轨道按钮（不影响联动）
+  activeTrack = hit.track;   // "K" | "S" | "H"
+  syncTrackUI();
+
+  // ✅ 2) 仍然走原来的联动改谱逻辑
+  const targets = linkedBeatsFor(selBeat);
+  for(const b of targets){
+    if(selSub < getSub(b)){
+      toggleCell(b, selSub, hit.track);
+    }
+  }
+
+  draw();
+  return; // 防止下面还有别的逻辑重复改
+}
+  });
+
+  // =============================
+  //  Edit buttons (toggle + set active track)
+  // =============================
+  function toggleAt(track){
+    if(running) return;
+
+    const targets = linkedBeatsFor(selBeat);
+    for(const b of targets){
+      if(selSub < getSub(b)){
+        toggleCell(b, selSub, track);
+      }
+    }
+    draw();
+  }
+
+  btnK.addEventListener("click", ()=>{
+    activeTrack="K"; syncTrackUI(); toggleAt("K");
+  });
+  btnS.addEventListener("click", ()=>{
+    activeTrack="S"; syncTrackUI(); toggleAt("S");
+  });
+  btnH.addEventListener("click", ()=>{
+    activeTrack="H"; syncTrackUI(); toggleAt("H");
+  });
+
+  // =============================
+  //  Sub mode toggle
+  // =============================
+  function syncSubModeUI(){
+    subModeBtn.textContent = (subMode==="global" ? "全" : "细");
+    subModeBtn.classList.toggle("on", subMode==="global");
+    subN.textContent = String(subMode==="global" ? globalSub : getSub(selBeat));
+  }
+
+  subModeBtn.addEventListener("click", ()=>{
+    if(running) return;
+    subMode = (subMode==="global") ? "perBeat" : "global";
+    if(subMode==="global"){
+      for(let b=0;b<TOTAL_BEATS;b++){
+        subByBeat[b] = globalSub;
+        setBeatSubdiv(b, globalSub, false);
+      }
+      selSub = Math.min(selSub, globalSub-1);
+    }
+    syncSubModeUI();
+    draw();
+  });
+
+  function changeSub(delta){
+    if(running) return;
+    const cur = (subMode==="global") ? globalSub : getSub(selBeat);
+    applySubdivChange(cur + delta);
+    syncSubModeUI();
+    updatePos(false);
+    draw();
+  }
+  subMinus.addEventListener("click", ()=>changeSub(-1));
+  subPlus.addEventListener("click",  ()=>changeSub(+1));
+
+  // =============================
+  //  Transport UI
+  // =============================
+  playBtn.addEventListener("click", ()=> running ? pause() : start());
+  resetBtn.addEventListener("click", reset);
+
+  bpmInp.addEventListener("change", ()=>{
+    bpmInp.value = clamp(+bpmInp.value, BPM_MIN, BPM_MAX);
+    draw();
+  });
+
+  metroBtn.addEventListener("click", ()=>{
+    metroOn = !metroOn;
+    metroBtn.classList.toggle("on", metroOn);
+  });
+
+  cursorSwitch.addEventListener("click", ()=>{
+    cursorMode = (cursorMode==="follow") ? "beat" : "follow";
+    const on = (cursorMode==="beat");
+    cursorSwitch.classList.toggle("on", on);
+    cursorSwitch.setAttribute("aria-checked", on ? "true" : "false");
+    draw();
+  });
+
+  bigBtn.addEventListener("click", ()=>{
+    bigOn = !bigOn;
+    bigBtn.classList.toggle("on", bigOn);
+    bigBeat.style.display = bigOn ? "flex" : "none";
+    draw();
+  });
+
+  function syncCountInUI(){
+    countInBtn.classList.toggle("on", countInOn);
+  }
+  countInBtn.addEventListener("click", ()=>{
+    countInOn = !countInOn;
+    syncCountInUI();
+  });
+
+  // =============================
+  //  Quiz select init + handler
+  // =============================
+  function initQuizSelect(){
+    quizN.innerHTML="";
+    for(let i=1;i<=TOTAL_BEATS;i++){
+      const op=document.createElement("option");
+      op.value=String(i);
+      op.textContent=String(i)+"拍";
+      quizN.appendChild(op);
+    }
+    quizN.value="2";
+  }
+  quizBtn.addEventListener("click", makeQuiz);
+
+  // =============================
+  //  Save current page as new HTML with embedded state
+  // =============================
+  function getState(){
+    return {
+      subMode, globalSub, subByBeat,
+      beatData,
+      linkOn, activeTrack,
+      bpm: +bpmInp.value,
+      metroOn, cursorMode, bigOn, countInOn,
+      quizMode
+    };
+  }
+
+  function restoreState(st){
+    if(!st) return;
+
+    subMode = st.subMode ?? subMode;
+    globalSub = st.globalSub ?? globalSub;
+    subByBeat = Array.isArray(st.subByBeat) ? st.subByBeat.slice(0,TOTAL_BEATS) : subByBeat;
+
+    if(Array.isArray(st.beatData) && st.beatData.length===TOTAL_BEATS){
+      beatData = st.beatData;
+      // 保底：把每拍数组长度修正为 getSub(b)
+      for(let b=0;b<TOTAL_BEATS;b++){
+        const n = getSub(b);
+        setBeatSubdiv(b, n, false);
+      }
+    }
+
+    linkOn = !!st.linkOn;
+    activeTrack = st.activeTrack || activeTrack;
+
+    bpmInp.value = clamp(+st.bpm || +bpmInp.value, BPM_MIN, BPM_MAX);
+    metroOn = st.metroOn ?? metroOn;
+    cursorMode = st.cursorMode ?? cursorMode;
+    bigOn = st.bigOn ?? bigOn;
+    countInOn = st.countInOn ?? countInOn;
+    quizMode = st.quizMode ?? quizMode;
+
+    // UI sync
+    syncLinkUI();
+    syncTrackUI();
+    syncSubModeUI();
+    syncCountInUI();
+    syncQuizModeUI();
+    metroBtn.classList.toggle("on", metroOn);
+    cursorSwitch.classList.toggle("on", cursorMode==="beat");
+    bigBtn.classList.toggle("on", bigOn);
+    bigBeat.style.display = bigOn ? "flex" : "none";
+  }
+
+  function saveAsHtml(){
+    const st = getState();
+    const json = JSON.stringify(st).replace(/</g, "\\u003c");
+    const html = document.documentElement.outerHTML
+      .replace(/\/\*__STATE_JSON__\*\/null/, `/*__STATE_JSON__*/window.__SAVED_STATE__=${json}`);
+
+    const blob = new Blob([html], {type:"text/html;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const ts = new Date();
+    const name = `节奏练习器_${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,"0")}-${String(ts.getDate()).padStart(2,"0")}_${String(ts.getHours()).padStart(2,"0")}${String(ts.getMinutes()).padStart(2,"0")}.html`;
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 1500);
+  }
+  saveBtn.addEventListener("click", () => {
+  const ok = window.confirm("是否保存当前谱面？");
+  if(!ok) return;
+
+  saveAsHtml();
+});
+
+
+  // =============================
+  //  Position display
+  // =============================
+  function posText(beatIndex, subIndex){
+    const m = Math.floor(beatIndex / BEATS_PER_MEASURE);
+    const beatIn = (beatIndex % BEATS_PER_MEASURE) + 1;
+    return `${m+1}:${beatIn}.${subIndex+1}`;
+  }
+  function updatePos(fromPlay){
+    if(fromPlay){
+      posEl.textContent = posText(cursorBeat, cursorSub);
+      selPill.textContent = posText(cursorBeat, cursorSub);
+    }else{
+      posEl.textContent = posText(selBeat, selSub);
+      selPill.textContent = posText(selBeat, selSub);
+    }
+  }
+
+  // =============================
+  //  Init
+  // =============================
+  buildCards();
+  renderFill();
+  initQuizSelect();
+
+  // default groove
+  applyDefaultGroove();
+
+  // restore from saved state if exists
+  try{
+    if(window.__SAVED_STATE__) restoreState(window.__SAVED_STATE__);
+  }catch(_){}
+
+  cursorBeat=0; cursorSub=0;
+  selBeat=0; selSub=0;
+  updatePos(false);
+
+  syncLinkUI();
+  syncTrackUI();
+  syncSubModeUI();
+  syncCountInUI();
+  syncQuizModeUI();
+  metroBtn.classList.toggle("on", metroOn);
+  cursorSwitch.classList.toggle("on", cursorMode==="beat");
+  bigBtn.classList.toggle("on", bigOn);
+  bigBeat.style.display = bigOn ? "flex" : "none";
+
+  draw();
+})();
+</script>
+
+</body>
+</html>
