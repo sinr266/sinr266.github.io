@@ -1,0 +1,1633 @@
+<!DOCTYPE html>
+<!-- saved from url=(0072)file:///C:/Users/sin/Desktop/NiceFun%20Met%20-%20%E5%89%AF%E6%9C%AC.html -->
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Metronome + Bass Score (Clean)</title>
+<style>
+  :root{
+    --bg:#0b0d12; --ink:#e9ecf3; --mut:#9aa3b6; 
+    --btn:#0f1320; --shadow:0 12px 40px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:radial-gradient(1200px 600px at 30% -20%, #141a2d 0%, var(--bg) 55%);
+    color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,"Microsoft YaHei",sans-serif
+  }
+  .wrap{max-width:1100px;margin:0 auto;padding:14px}
+  .top{
+    display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+    background:linear-gradient(180deg,#121830,#0e1220);
+    border:1px solid var(--line);border-radius:16px;padding:1px 1px;
+    box-shadow:var(--shadow);
+  }
+  .group{
+    display:flex;border-radius:14px;
+    background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04)
+  }
+  .sp{flex:1}
+  button{
+    cursor:pointer;border:1px solid var(--line);
+    background:linear-gradient(180deg,var(--btnH),var(--btn));
+    color:var(--ink);border-radius:14px;font-weight:850;
+    transition:transform .05s ease, background .15s ease, border-color .15s ease;
+    user-select:none;
+  }
+  button:hover{background:linear-gradient(180deg,#1a2240,#11182c);border-color:#334469}
+  button:active{transform:translateY(1px);background:linear-gradient(180deg,#1e2a4d,#131c33)}
+  button.icon{width:30px;height:30px;display:grid;place-items:center;padding:0;border-radius:14px}
+  button.icon svg{width:20px;height:20px;fill:currentColor}
+  button.primary{border-color:#2b4db6;background:linear-gradient(180deg,#203a8d,#141f4f)}
+  button.primary:hover{border-color:#3a65ff}
+  button.wide{width:112px}
+  .pill{
+    border:1px solid var(--line);border-radius:999px;padding:8px 12px;
+    color:var(--mut);font-weight:900;background:linear-gradient(180deg,#10172b,#0d1220);
+    white-space:nowrap;
+  }
+  .field{
+    display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:14px;
+    background:linear-gradient(180deg,#10172b,#0d1220);
+    color:var(--mut);font-weight:900;
+  }
+  input[type="number"]{
+    width:92px;
+    background:#0a0f1c;border:1px solid rgba(255,255,255,.08);
+    border-radius:12px;color:var(--ink);padding:8px 10px;outline:none;font-weight:850;
+  }
+  label.tog{
+    display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:14px;
+    background:linear-gradient(180deg,#10172b,#0d1220);
+    color:var(--mut);font-weight:900;user-select:none
+  }
+  label.tog input{width:16px;height:16px;accent-color:#4da3ff}
+
+  canvas{
+    display:block;width:100%;height:auto;border-radius:16px;border:1px solid var(--line);
+    background:linear-gradient(180deg,#0a0f1a,#070a12);
+    box-shadow:var(--shadow);
+  }
+  .gap{height:0px}
+
+  .quizRow{
+    margin-top:1px;
+    display:flex;gap:1px;align-items:center;flex-wrap:wrap;
+    background:linear-gradient(180deg,#121830,#0e1220);
+    border:1px solid var(--line);
+    border-radius:16px;
+    box-shadow:var(--shadow);
+  }
+  .quizTitle{font-weight:950;color:var(--mut);padding:0 6px}
+  .quizBtns{display:flex;gap:8px;flex-wrap:wrap}
+  .qBtn{height:20px;min-width:20px;padding:0 2px;border-radius:14px;display:grid;place-items:center;font-weight:950}
+  .qBtn:hover{border-color:#3a65ff}
+  .quizRow .sp{flex:1}
+
+  .switchWrap{
+    display:flex;align-items:center;gap:10px;
+    padding:6px 10px;border-radius:14px;
+
+  }
+  .switchLabel{color:var(--mut);font-weight:950;white-space:nowrap}
+  .switch{
+    width:100px;height:34px;border-radius:999px;
+    border:1px solid rgba(255,255,255,.10);
+    background:linear-gradient(180deg,#0f162b,#0b1020);
+    position:relative;cursor:pointer;user-select:none;
+  }
+  .switch .knob{
+    position:absolute;top:2px;left:3px;
+    width:44px;height:28px;border-radius:999px;
+    background:linear-gradient(180deg,#1a2340,#11182d);
+    border:1px solid rgba(255,255,255,.10);
+    box-shadow:0 8px 18px rgba(0,0,0,.35);
+    transition:left .16s ease;
+  }
+  .switch .txt{
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 12px;font-weight:950;font-size:12px;
+    color:rgba(233,236,243,.85);
+    pointer-events:none;
+  }
+  .switch.on .knob{ left:52px; }
+
+  .bottom{
+    margin-top:0px;
+    display:grid;
+    grid-template-columns: 1fr 420px;
+    gap:1px;
+    align-items:stretch;
+  }
+  @media (max-width: 940px){ .bottom{grid-template-columns:1fr} }
+  .card{
+    background:linear-gradient(180deg,#121830,#0e1220);
+    border:1px solid var(--line);
+    border-radius:16px;
+    box-shadow:var(--shadow);
+    display:flex;align-items:center;gap:10px;
+
+  }
+
+  .wheelRow{display:flex;align-items:center;gap:10px;width:350px}
+  .wheel{
+    position:relative;flex:1;height:30px;border-radius:16px;
+    border:1px solid rgba(255,255,255,.10);
+    background:linear-gradient(180deg,#0e152b,#0b1020);
+    overflow:hidden;cursor:ew-resize;
+  }
+  .wheel::before{
+    content:"";position:absolute;inset:0;
+    background:
+      radial-gradient(120px 40px at 50% 20%, rgba(255,255,255,.10), transparent 60%),
+      linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent);
+    pointer-events:none;
+  }
+  .ticks{
+    position:absolute;inset:0;opacity:.7;
+    background-image: repeating-linear-gradient(90deg, rgba(255,255,255,.07) 0px, rgba(255,255,255,.07) 1px, transparent 1px, transparent 12px);
+    mask-image: linear-gradient(90deg, transparent, black 15%, black 85%, transparent);
+  }
+  .ticks.big{
+    opacity:.55;
+    background-image: repeating-linear-gradient(90deg, rgba(255,255,255,.10) 0px, rgba(255,255,255,.10) 2px, transparent 2px, transparent 60px);
+  }
+  .needle{
+    position:absolute;top:6px;bottom:6px;width:4px;border-radius:999px;left:0%;
+    background:rgb(0,200,80);box-shadow:0 0 18px rgba(0,200,80,.45);
+    transform:translateX(-50%);
+  }
+  .miniBtn{width:44px;height:44px}
+  .miniBtn svg{width:18px;height:18px}
+
+  .transport{justify-content:flex-end}
+  .transport .left{margin-right:auto;display:flex;gap:8px;align-items:center}
+
+  .helpBar{
+    margin-top:1px;
+    display:flex;gap:10px;align-items:center;
+    padding:10px 12px;border:1px solid var(--line);
+    background:linear-gradient(180deg,#10172b,#0d1220);
+    border-radius:16px;box-shadow:var(--shadow);min-height:44px;
+  }
+  .helpBar .msg{color:var(--mut);font-weight:900;font-size:13px}
+  .helpBar .right{margin-left:auto}
+
+  .menu{
+    position:fixed;z-index:9999;min-width:180px;background:#0b1020;border:1px solid #2c3a5d;border-radius:14px;
+    box-shadow:0 12px 50px rgba(0,0,0,.5);padding:6px;display:none
+  }
+  .menu .it{padding:9px 10px;border-radius:12px;cursor:pointer;font-weight:900;font-size:13px;color:var(--ink)}
+  .menu .it:hover{background:#172145}
+  .menu .hr{height:1px;background:#223055;margin:6px 4px}
+
+  dialog{
+    border:none;border-radius:16px;max-width:560px;width:calc(100% - 24px);
+    background:linear-gradient(180deg,#121830,#0e1220);color:var(--ink);
+    padding:0;box-shadow:0 18px 80px rgba(0,0,0,.65)
+  }
+  dialog::backdrop{background:rgba(0,0,0,.6)}
+  .dlgH{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .dlgB{padding:12px 14px}
+  .tbl{display:grid;grid-template-columns:1fr 120px 120px 78px;gap:8px;align-items:center}
+
+  .bassBar{
+    margin-top:1px;
+    display:flex;gap:1px;align-items:center;flex-wrap:wrap;
+    background:linear-gradient(180deg,#121830,#0e1220);
+    border:1px solid var(--line);
+    border-radius:16px;
+    box-shadow:var(--shadow);
+  }
+  .bassKeys{display:flex;gap:8px;flex-wrap:wrap}
+  .k{width:20px;height:44px;border-radius:14px;display:grid;place-items:center;font-weight:950}
+  .k.wide{width:30px}
+
+  .mixCard{
+    margin-top:1px;
+    background:linear-gradient(180deg,#121830,#0e1220);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:10px 12px;
+    box-shadow:var(--shadow);
+    display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+  }
+  .fader{
+    width:53px;height:20px;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(255,255,255,.02);
+    border-radius:14px;
+
+  }
+
+  input[type="range"]{width:100%;accent-color:#4da3ff;}
+
+  /* Big beat overlay */
+  .stage{
+    position:relative;
+  }
+  .bigBeat{
+    position:absolute;
+    left:0; right:0;
+    top:8px;
+    display:none;
+    justify-content:center;
+    pointer-events:none;
+    z-index:20;
+  }
+  .bigBeat .txt{
+    font-weight:1000;
+    font-size:300px;
+    letter-spacing:2px;
+    color:rgba(233,236,243,.18);
+    text-shadow:0 10px 40px rgba(0,0,0,.35);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+ <div class="top"> <a href="index.html" 
+           style="text-decoration:none; 
+                  display:inline-flex; 
+                  align-items:center; 
+                  justify-content:center; 
+                  width:20px; 
+                  height:20px; 
+                  background:#f0f0f0; 
+                  border-radius:50%; 
+                  margin-right:10px;
+                  transition:all 0.3s ease;"
+           onmouseover="this.style.background='#d32f2f'; this.querySelector('svg').style.fill='white';"
+           onmouseout="this.style.background='#f0f0f0'; this.querySelector('svg').style.fill='#666';">
+            <!-- SVG小房子图标 -->
+            <svg style="width:14px; height:14px; fill:#666; transition:fill 0.3s;" viewBox="0 0 24 24">
+                <path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/>
+            </svg>
+        </a>
+        节奏练习器</div>
+  <div class="top">     
+    <div class="group" data-help="调整小节内 Beat 数量（1–16）">
+      <button class="icon" id="beatMinus" aria-label="减少 Beat" data-help="减少 Beat 数量">
+        <svg viewBox="0 0 24 24"><path d="M5 11h14v2H5z"></path></svg>
+      </button>
+      <span class="pill" id="beatInfo" data-help="当前 Beat 数量">4</span>
+      <button class="icon" id="beatPlus" aria-label="增加 Beat" data-help="增加 Beat 数量">
+        <svg viewBox="0 0 24 24"><path d="M11 5h2v14h-2zM5 11h14v2H5z"></path></svg>
+      </button>
+    </div>
+
+   
+      <label class="tog" data-help="开始时先 4 拍强音（不走格，不闪烁，不移动指针）"><input id="countIn" type="checkbox"></label>
+
+      <button class="icon" id="metroBtn" data-help="节拍器：每拍第 1 细分额外嘀一声（独立于格子音色）" aria-label="节拍器" style="border-color: rgb(58, 101, 255); opacity: 1;">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2a8 8 0 1 0 8 8 8.01 8.01 0 0 0-8-8zm0 14a6 6 0 1 1 6-6 6.01 6.01 0 0 1-6 6z"></path>
+          <path d="M12 6h1v6l4 2-.5.9L12 12.4z"></path>
+        </svg>
+      </button>
+
+      <button class="icon" id="bigBtn" data-help="大字：在上方半透明显示当前 Beat 数字" aria-label="大字" style="border-color: var(--line);">
+        <svg viewBox="0 0 24 24"><path d="M4 19h4l2-6h4l2 6h4L14 5h-4L4 19zm7.3-9L12 7.7 12.7 10h-1.4z"></path></svg>
+      </button>
+
+   
+      <div class="field" data-help="输入 BPM（40–250）">
+        <input id="bpm" type="number" min="40" max="250" value="60" aria-label="BPM">
+      </div>
+ 
+
+    <div class="sp"></div>
+   
+  </div>
+
+  <div class="gap"></div>
+
+  <div class="stage">
+    <div class="bigBeat" id="bigBeat" style="display: none;"><div class="txt" id="bigBeatTxt">1</div></div>
+
+    <canvas id="grid" width="980" height="520" data-help="节奏网格：左键循环音色；右键菜单；列顶部/底部 ± 调细分"></canvas>
+    <div class="gap"></div>
+    <canvas id="jp" width="980" height="190" data-help="简谱显示：指针同步指向当前发声的细分位置"></canvas>
+    <div class="gap"></div>
+    <canvas id="bass" width="980" height="190" data-help="Bass简谱：点一下选择位置；下方按键步进录入（写完自动跳到下一个槽位）"></canvas>
+  </div>
+
+  
+
+  
+
+  <div class="bottom">
+    <div class="card" data-help="左右拖动改变 BPM：左慢右快（指针颜色从绿→红渐变；Shift=5）">
+      <div class="wheelRow">
+        <button class="icon miniBtn" id="bpmMinus" data-help="BPM 减：单击 -1；双击 -5" aria-label="BPM -">
+          <svg viewBox="0 0 24 24"><path d="M5 11h14v2H5z"></path></svg>
+        </button>
+
+        <div class="wheel" id="wheel" data-help="拖动改变 BPM（左慢右快）">
+          <div class="ticks big"></div>
+          <div class="ticks"></div>
+          <div class="needle" id="needle" style="left: 9.52381%; background: rgb(48, 187, 78); box-shadow: rgba(48, 187, 78, 0.45) 0px 0px 18px;"></div>
+        </div>
+
+        <button class="icon miniBtn" id="bpmPlus" data-help="BPM 加：单击 +1；双击 +5" aria-label="BPM +">
+          <svg viewBox="0 0 24 24"><path d="M11 5h2v14h-2zM5 11h14v2H5z"></path></svg>
+        </button>
+
+        <span class="pill" id="bpmPill" data-help="当前 BPM">60</span>
+  <button class="icon" id="tapBtn" data-help="TAP：点 4 次以上计算 BPM（&gt;2s 断开则重置）" aria-label="TAP">
+        <svg viewBox="0 0 24 24">
+          <path d="M9 2h6v2H9z"></path>
+          <path d="M12 6a8 8 0 1 0 8 8 8.01 8.01 0 0 0-8-8zm0 14a6 6 0 1 1 6-6 6.01 6.01 0 0 1-6 6z"></path>
+          <path d="M13 10h-2v5l4 2 1-1.73-3-1.5z"></path>
+        </svg>
+      </button>
+      </div>
+    </div>
+
+    <div class="card transport" data-help="播放控制（开始/暂停、复位、静音、TAP、音色）">
+      <div class="left"><span class="pill" id="runState">就绪</span></div>
+
+      <button class="primary wide" id="playBtn" data-help="开始 / 暂停（暂停后继续当前位置）" aria-label="开始/暂停">
+        <span style="display:inline-flex;align-items:center;gap:10px;justify-content:center">
+          <svg id="playIcon" viewBox="0 0 24 24" width="20" height="20" style="fill:currentColor"><path d="M8 5v14l12-7z"></path></svg>
+        </span>
+      </button>
+
+      <button class="icon" id="resetBtn" data-help="复位到第 1 Beat / 第 1 细分（并停掉 Bass 延音）" aria-label="复位">
+        <svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 1 1-6.65 9H3l3.5-3.5L10 14H7.42A5 5 0 1 0 12 7V5z"></path></svg>
+      </button>
+
+      <button class="icon" id="muteBtn" data-help="静音：节奏继续，但不出声（再次点恢复）" aria-label="静音" style="border-color: var(--line);">
+        <svg id="muteIcon" viewBox="0 0 24 24" style="opacity: 0.95;"><path d="M16.5 12 19 9.5 17.6 8.1 15.1 10.6 12.6 8.1 11.2 9.5 13.7 12 11.2 14.5 12.6 15.9 15.1 13.4 17.6 15.9 19 14.5 16.5 12zM3 10v4h4l5 4V6L7 10H3z"></path></svg>
+      </button>
+
+
+
+      <button class="icon" id="soundBtn" data-help="音色管理：调整频率/时长并试听" aria-label="音色">
+        <svg viewBox="0 0 24 24"><path d="M3 10v4h4l5 4V6L7 10H3zm13.5 2a3.5 3.5 0 0 0-2-3.16v6.32A3.5 3.5 0 0 0 16.5 12zm0-7a10 10 0 0 1 0 14l-1.4-1.4a8 8 0 0 0 0-11.2L16.5 5z"></path></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="quizRow">
+   <span class="pill" id="quizInfo" data-help="当前题目来源"></span>
+
+    <div class="quizBtns" data-help="点难度即出题（按当前 Beat 数生成）">
+      <button class="qBtn" data-diff="1">I</button>
+      <button class="qBtn" data-diff="2">II</button>
+      <button class="qBtn" data-diff="3">III</button>
+      <button class="qBtn" data-diff="4">IV</button>
+      <button class="qBtn" data-diff="5">V</button>
+    </div>
+
+    <button id="teachBtn" class="icon" data-help="教学：第1遍正常；第2遍只剩节拍器；循环切换" aria-label="教学" style="border-color: var(--line);">
+      <svg viewBox="0 0 24 24"><path d="M12 3 1 9l11 6 9-4.91V17h2V9L12 3zm0 13L4.47 12 3 12.8V16c0 2.76 4.03 5 9 5s9-2.24 9-5v-3.2l-1.47-.8L12 16z"></path></svg>
+    </button>
+
+    <div class="sp"></div>
+
+    <div class="switchWrap" data-help="指针模式：跟随=每细分走；逐拍=每 Beat 一跳">
+      <span class="switchLabel"></span>
+      <div class="switch" id="modeSwitch" role="switch" aria-checked="false">
+        <div class="txt"><span>跟随</span><span>逐拍</span></div>
+        <div class="knob"></div>
+      </div>
+    </div>
+
+ 
+  </div><div class="bassBar">
+    <div class="bassKeys" data-help="Bass 录入：先点 Bass 谱定位，再按键写入；升降不自动回">
+      <button class="k wide" id="accBtn" data-help="升降：自然 → # → b → 自然">∎</button>
+      <button class="k" data-deg="1">1</button>
+      <button class="k" data-deg="2">2</button>
+      <button class="k" data-deg="3">3</button>
+      <button class="k" data-deg="4">4</button>
+      <button class="k" data-deg="5">5</button>
+      <button class="k" data-deg="6">6</button>
+      <button class="k" data-deg="7">7</button>
+      <button class="k" id="restBtn" data-help="休止：写 0">0</button>
+      <button class="k" id="tieBtn" data-help="延音：写 -（保持到下一个音/休止）">-</button>
+      <button class="k wide" id="nameBtn" data-help="显示切换：数字(1) / 字母(C)">1/C</button>
+    </div>
+    <div class="sp"></div>
+    <span class="pill" id="bassInfo" data-help="当前 Bass 录入状态"></span>
+  </div><div class="mixCard" data-help="推子：分别控制 BASS / 节拍器 / 强拍 / 细分 / 总线 音量（滑动立即生效）">
+    <div class="fader" data-help="BASS 音量">
+      <input id="volBass" type="range" min="0" max="1" step="0.01" value="0.70" aria-label="BASS 音量">
+    </div>
+    <div class="fader" data-help="节拍器 音量">
+      <input id="volMetro" type="range" min="0" max="1" step="0.01" value="0.65" aria-label="节拍器 音量">
+    </div>
+    <div class="fader" data-help="强拍（强音 click）音量">
+      <input id="volStrong" type="range" min="0" max="1" step="0.01" value="0.85" aria-label="强拍 音量">
+    </div>
+    <div class="fader" data-help="细分（中强/弱 click）音量">
+      <input id="volSub" type="range" min="0" max="1" step="0.01" value="0.70" aria-label="细分 音量">
+    </div>
+    <div class="fader" data-help="总线（Master）音量">
+      <input id="volMaster" type="range" min="0" max="1" step="0.01" value="0.90" aria-label="总线 音量">
+    </div>
+  </div>
+
+  <div class="helpBar">
+    <div class="msg" id="helpMsg">节奏网格：左键循环音色；右键菜单；列顶部/底部 ± 调细分</div>
+    <div class="right pill" id="hintPos"></div>
+  </div>
+</div>
+
+<div class="menu" id="menu"></div>
+
+<dialog id="dlg">
+  <div class="dlgH">
+    <b>音色管理（Hz / ms）</b>
+    <button id="closeDlg">关闭</button>
+  </div>
+  <div class="dlgB">
+    <div class="tbl" id="tbl"></div>
+    <div style="height:1px;background:var(--line);margin:12px 0;"></div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <span class="pill">节拍器</span>
+      <input id="mFreq" type="number" min="0" max="8000">
+      <input id="mMs" type="number" min="0" max="200">
+      <button id="testM">试听</button>
+      <div style="flex:1"></div>
+      <button id="applyDlg">保存</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+(() => {
+  const BPM_MIN=40, BPM_MAX=250;
+  const BEATS_MIN=1, BEATS_MAX=16;
+  const SUB_MIN=1, SUB_MAX=8;
+  const TAP_RESET_MS=2000;
+
+  const grid=document.getElementById("grid");
+  const g=grid.getContext("2d");
+  const jp=document.getElementById("jp");
+  const j=jp.getContext("2d");
+  const bass=document.getElementById("bass");
+  const bj=bass.getContext("2d");
+
+  const bigBeat=document.getElementById("bigBeat");
+  const bigBeatTxt=document.getElementById("bigBeatTxt");
+
+  const beatMinus=document.getElementById("beatMinus");
+  const beatPlus=document.getElementById("beatPlus");
+  const beatInfo=document.getElementById("beatInfo");
+  const pos=document.getElementById("pos");
+
+  const bpmInp=document.getElementById("bpm");
+  const bpmPill=document.getElementById("bpmPill");
+  const bpmMinus=document.getElementById("bpmMinus");
+  const bpmPlus=document.getElementById("bpmPlus");
+  const wheel=document.getElementById("wheel");
+  const needle=document.getElementById("needle");
+
+  const playBtn=document.getElementById("playBtn");
+  const playIcon=document.getElementById("playIcon");
+  const resetBtn=document.getElementById("resetBtn");
+  const tapBtn=document.getElementById("tapBtn");
+  const soundBtn=document.getElementById("soundBtn");
+  const muteBtn=document.getElementById("muteBtn");
+  const muteIcon=document.getElementById("muteIcon");
+
+  const countInChk=document.getElementById("countIn");
+  const metroBtn=document.getElementById("metroBtn");
+  const bigBtn=document.getElementById("bigBtn");
+  const runState=document.getElementById("runState");
+
+  const helpMsg=document.getElementById("helpMsg");
+  const hintPos=document.getElementById("hintPos");
+
+  const quizInfo=document.getElementById("quizInfo");
+  const quizBtns=[...document.querySelectorAll(".qBtn")];
+  const teachBtn=document.getElementById("teachBtn");
+  const modeSwitch=document.getElementById("modeSwitch");
+  const menu=document.getElementById("menu");
+
+  const dlg=document.getElementById("dlg");
+  const tbl=document.getElementById("tbl");
+  const closeDlg=document.getElementById("closeDlg");
+  const applyDlg=document.getElementById("applyDlg");
+  const mFreq=document.getElementById("mFreq");
+  const mMs=document.getElementById("mMs");
+  const testM=document.getElementById("testM");
+
+  const accBtn=document.getElementById("accBtn");
+  const nameBtn=document.getElementById("nameBtn");
+  const restBtn=document.getElementById("restBtn");
+  const tieBtn=document.getElementById("tieBtn");
+  const degBtns=[...document.querySelectorAll(".k[data-deg]")];
+  const bassInfo=document.getElementById("bassInfo");
+
+  const volBass=document.getElementById("volBass");
+  const volMetro=document.getElementById("volMetro");
+  const volStrong=document.getElementById("volStrong");
+  const volSub=document.getElementById("volSub");
+  const volMaster=document.getElementById("volMaster");
+
+  const setHelp=(t)=>helpMsg.textContent=t||"";
+  document.querySelectorAll("[data-help]").forEach(el=>{
+    el.addEventListener("mouseenter", ()=>setHelp(el.getAttribute("data-help")));
+    el.addEventListener("mouseleave", ()=>setHelp(""));
+  });
+
+  const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v|0));
+  const defaultAccent=(b,s)=> (s!==0) ? "弱" : (b===0?"强":"中强");
+
+  let beats=4;
+  let subdiv=[4,4,4,4];
+  let pattern=[];
+
+  // Bass slot: {t:"rest"|"tie"|"note", deg:1..7, acc:-1|0|1}
+  let bassScore=[];
+
+  // Bass editor location = playback pointer (同步)
+  let editBeat=0, editSub=0;
+
+  // input state
+  let accMode=0;      // 0 natural, +1 #, -1 b
+  let nameMode="deg"; // "deg" | "let"
+
+  let accents=["强","中强","弱","静音"];
+  let sounds={
+    "强":{freq:2200,ms:18},
+    "中强":{freq:1600,ms:16},
+    "弱":{freq:1100,ms:12},
+    "静音":{freq:0,ms:0},
+  };
+  let metroCfg={freq:2500,ms:10};
+
+  let metronomeOn=true;
+  let countInOn=false;
+  let muteAll=false;
+  let bigOn=false;
+
+  let pointerMode="follow"; // "follow" | "beat"
+  let teachMode=0;
+  let loopIndex=0;
+  const isMetroOnlyLoop = ()=> (teachMode===1) && (loopIndex%2===1);
+
+  let uiBeat=0, uiSub=0;
+  let playBeat=0, playSub=0;
+  let running=false;
+  let inCountIn=false, countLeft=0, countNextT=0;
+  let beatStartT=0, nextTickT=0, pausedAtT=null;
+  let flash={b:-1,s:-1,until:0};
+
+  // Audio graph
+  let audio=null;
+  let gMaster=null, gBass=null, gMetro=null, gStrong=null, gSub=null;
+  const bufCache=new Map();
+
+  // Bass continuous osc
+  let bassOsc=null, bassGate=null, bassOn=false;
+
+  function ensureAudio(){
+    if(audio) return;
+    audio=new (window.AudioContext||window.webkitAudioContext)({latencyHint:"interactive"});
+
+    gMaster=audio.createGain();
+    gBass=audio.createGain();
+    gMetro=audio.createGain();
+    gStrong=audio.createGain();
+    gSub=audio.createGain();
+
+    gMaster.gain.value=+volMaster.value;
+    gBass.gain.value=+volBass.value;
+    gMetro.gain.value=+volMetro.value;
+    gStrong.gain.value=+volStrong.value;
+    gSub.gain.value=+volSub.value;
+
+    gBass.connect(gMaster);
+    gMetro.connect(gMaster);
+    gStrong.connect(gMaster);
+    gSub.connect(gMaster);
+    gMaster.connect(audio.destination);
+
+    bassGate=audio.createGain();
+    bassGate.gain.value=0.0001;
+    bassOsc=audio.createOscillator();
+    bassOsc.type="sawtooth";
+    bassOsc.frequency.value=110;
+
+    const lp=audio.createBiquadFilter();
+    lp.type="lowpass"; lp.frequency.value=520; lp.Q.value=0.8;
+
+    bassOsc.connect(lp).connect(bassGate).connect(gBass);
+    bassOsc.start();
+  }
+
+  function stopBassNow(){
+    if(!audio || !bassGate) return;
+    const t=audio.currentTime;
+    bassGate.gain.cancelScheduledValues(t);
+    bassGate.gain.setValueAtTime(Math.max(0.0001, bassGate.gain.value), t);
+    bassGate.gain.exponentialRampToValueAtTime(0.0001, t+0.02);
+    bassOn=false;
+  }
+
+  function setBassNoteAt(t, hz){
+    if(!audio || !bassOsc || !bassGate) return;
+    bassOsc.frequency.setValueAtTime(hz, t);
+    bassGate.gain.cancelScheduledValues(t);
+    bassGate.gain.setValueAtTime(Math.max(0.0001, bassGate.gain.value), t);
+    bassGate.gain.exponentialRampToValueAtTime(0.40, t+0.012);
+    bassGate.gain.exponentialRampToValueAtTime(0.18, t+0.10);
+    bassOn=true;
+  }
+
+  function makeClickBuf(freq,ms){
+    if(freq<=0||ms<=0) return null;
+    ensureAudio();
+    const sr=audio.sampleRate;
+    const n=Math.max(1,Math.floor(sr*(ms/1000)));
+    const buf=audio.createBuffer(1,n,sr);
+    const d=buf.getChannelData(0);
+    const attack=Math.max(1,Math.floor(0.002*sr));
+    const decay=Math.max(1,Math.floor(0.020*sr));
+    const dEnd=Math.min(decay,n);
+    const w=2*Math.PI*freq/sr;
+    let ph=0;
+    for(let i=0;i<n;i++){
+      let env;
+      if(i<attack) env=i/attack;
+      else{
+        const tt=(i-attack)/Math.max(1,(dEnd-attack));
+        env=(i<dEnd)?Math.exp(-6*tt):0;
+      }
+      d[i]=Math.sin(ph)*env*0.45;
+      ph+=w;
+    }
+    return buf;
+  }
+
+  function getBuf(freq,ms){
+    const k=`${freq},${ms}`;
+    if(bufCache.has(k)) return bufCache.get(k);
+    const b=makeClickBuf(freq,ms);
+    bufCache.set(k,b);
+    return b;
+  }
+
+  function playClickAt(t, freq, ms, destGain){
+    if(freq<=0||ms<=0) return;
+    ensureAudio();
+    const b=getBuf(freq,ms);
+    if(!b) return;
+    const src=audio.createBufferSource();
+    src.buffer=b;
+    src.connect(destGain);
+    src.start(t);
+  }
+
+  function hookSliders(){
+    const upd=()=>{
+      if(!audio) return;
+      gBass.gain.value=+volBass.value;
+      gMetro.gain.value=+volMetro.value;
+      gStrong.gain.value=+volStrong.value;
+      gSub.gain.value=+volSub.value;
+      gMaster.gain.value=+volMaster.value;
+    };
+    [volBass,volMetro,volStrong,volSub,volMaster].forEach(el=>{
+      el.addEventListener("input", ()=>{ ensureAudio(); upd(); });
+    });
+  }
+
+  // ===== tempo helpers =====
+  const getBpm=()=>clamp(+bpmInp.value,BPM_MIN,BPM_MAX);
+  function bpmColor(bpm){
+    const t=(bpm-BPM_MIN)/(BPM_MAX-BPM_MIN);
+    const r=Math.round( 30 + t*(220-30) );
+    const g2=Math.round( 200 + t*(60-200) );
+    const b=Math.round( 80 + t*(60-80) );
+    return {rgb:`rgb(${r},${g2},${b})`, rgba:`rgba(${r},${g2},${b},0.45)`};
+  }
+  function updateNeedle(){
+    const bpm=getBpm();
+    const t=(bpm-BPM_MIN)/(BPM_MAX-BPM_MIN);
+    needle.style.left = `${t*100}%`;
+    const c=bpmColor(bpm);
+    needle.style.background=c.rgb;
+    needle.style.boxShadow=`0 0 18px ${c.rgba}`;
+    bpmPill.textContent = `${bpm}`;
+  }
+  function setBpm(v){
+    bpmInp.value=clamp(v,BPM_MIN,BPM_MAX);
+    updateNeedle();
+    drawJp(); drawBass();
+  }
+
+  function setBpmFromX(clientX){
+    const rect=wheel.getBoundingClientRect();
+    const x=Math.max(0,Math.min(rect.width, clientX-rect.left));
+    const t=x/rect.width;
+    setBpm(Math.round(BPM_MIN + t*(BPM_MAX-BPM_MIN)));
+    stopBassNow();
+  }
+  let wheelDown=false;
+  wheel.addEventListener("pointerdown",(e)=>{ wheelDown=true; wheel.setPointerCapture?.(e.pointerId); setBpmFromX(e.clientX); });
+  window.addEventListener("pointermove",(e)=>{ if(wheelDown) setBpmFromX(e.clientX); });
+  window.addEventListener("pointerup",()=>{ wheelDown=false; });
+
+  function clickAndDbl(btn, on1, on5){
+    let t=null;
+    btn.addEventListener("click",()=>{ if(t) return; t=setTimeout(()=>{t=null; on1();},220); });
+    btn.addEventListener("dblclick",()=>{ if(t){clearTimeout(t);t=null;} on5(); });
+  }
+  clickAndDbl(bpmMinus, ()=>{ setBpm(getBpm()-1); stopBassNow(); }, ()=>{ setBpm(getBpm()-5); stopBassNow(); });
+  clickAndDbl(bpmPlus,  ()=>{ setBpm(getBpm()+1); stopBassNow(); }, ()=>{ setBpm(getBpm()+5); stopBassNow(); });
+  bpmInp.onchange=()=>{ setBpm(getBpm()); stopBassNow(); };
+
+  // ===== data =====
+  function ensureBass(){
+    while(bassScore.length<beats) bassScore.push([]);
+    bassScore=bassScore.slice(0,beats);
+    for(let b=0;b<beats;b++){
+      const n=subdiv[b];
+      bassScore[b]=(bassScore[b]||[]).slice(0,n);
+      while(bassScore[b].length<n) bassScore[b].push({t:"rest"});
+    }
+  }
+
+  function ensurePattern(){
+    beats=clamp(beats,BEATS_MIN,BEATS_MAX);
+    while(subdiv.length<beats) subdiv.push(4);
+    subdiv=subdiv.slice(0,beats).map(x=>clamp(x,SUB_MIN,SUB_MAX));
+
+    while(pattern.length<beats){
+      const b=pattern.length, n=subdiv[b];
+      pattern.push(Array.from({length:n},(_,s)=>defaultAccent(b,s)));
+    }
+    pattern=pattern.slice(0,beats);
+    for(let b=0;b<beats;b++){
+      const n=subdiv[b];
+      pattern[b]=(pattern[b]||[]).slice(0,n);
+      while(pattern[b].length<n) pattern[b].push(defaultAccent(b,pattern[b].length));
+    }
+
+    ensureBass();
+
+    playBeat=Math.min(playBeat,beats-1);
+    playSub=Math.min(playSub,subdiv[playBeat]-1);
+
+    uiBeat=Math.min(uiBeat,beats-1);
+    uiSub=Math.min(uiSub,subdiv[uiBeat]-1);
+
+    // 同步编辑指针到播放指针
+    editBeat=uiBeat;
+    editSub=uiSub;
+
+    if(!accents.includes("静音")) accents.push("静音");
+    if(!sounds["静音"]) sounds["静音"]={freq:0,ms:0};
+  }
+
+  function defaultBassFromPattern(){
+    for(let b=0;b<beats;b++){
+      for(let s=0;s<subdiv[b];s++){
+        if(pattern[b][s]==="强") bassScore[b][s]={t:"note",deg:1,acc:0};
+        else bassScore[b][s]={t:"rest"};
+      }
+    }
+  }
+
+  // ===== pointer / teach / mute / big =====
+  function syncModeUI(){
+    const on = (pointerMode==="beat");
+    modeSwitch.classList.toggle("on", on);
+    modeSwitch.setAttribute("aria-checked", on ? "true" : "false");
+    drawJp(); drawBass();
+  }
+  modeSwitch.addEventListener("click", ()=>{
+    pointerMode = (pointerMode==="follow") ? "beat" : "follow";
+    syncModeUI();
+  });
+
+  function syncTeachUI(){
+    teachBtn.style.borderColor = (teachMode===1) ? "#3a65ff" : "var(--line)";
+    
+  }
+  teachBtn.addEventListener("click", ()=>{
+    teachMode = (teachMode===1) ? 0 : 1;
+    loopIndex = 0;
+    syncTeachUI();
+  });
+
+  function syncMuteUI(){
+    muteBtn.style.borderColor = muteAll ? "#3a65ff" : "var(--line)";
+    muteIcon.style.opacity = muteAll ? 1 : 0.95;
+  }
+  muteBtn.addEventListener("click", ()=>{
+    muteAll=!muteAll;
+    syncMuteUI();
+    if(muteAll) stopBassNow();
+  });
+
+  function syncMetroUI(){
+    metroBtn.style.borderColor = metronomeOn ? "#3a65ff" : "var(--line)";
+    metroBtn.style.opacity = metronomeOn ? 1 : 0.85;
+  }
+  metroBtn.addEventListener("click", ()=>{
+    metronomeOn=!metronomeOn;
+    syncMetroUI();
+    stopBassNow();
+  });
+
+  function syncBigUI(){
+    bigBtn.style.borderColor = bigOn ? "#3a65ff" : "var(--line)";
+    bigBeat.style.display = bigOn ? "flex" : "none";
+  }
+  bigBtn.addEventListener("click", ()=>{
+    bigOn=!bigOn;
+    syncBigUI();
+  });
+
+  // ===== transport / scheduler =====
+  const LOOKAHEAD=0.08, TICK=0.016;
+  let timer=null;
+  const beatSec=()=>60/getBpm();
+  const loopOn=()=>{ if(timer) clearInterval(timer); timer=setInterval(scheduler, TICK*1000); };
+  const loopOff=()=>{ if(timer){clearInterval(timer); timer=null;} };
+  const setRunState=(t)=>runState.textContent=t;
+
+  function setPlayIcon(isPlaying){
+    if(isPlaying){
+      playIcon.innerHTML = '<path d="M7 6h4v12H7zM13 6h4v12h-4z"/>';
+      setRunState("播放");
+    }else{
+      playIcon.innerHTML = '<path d="M8 5v14l12-7z"/>';
+      setRunState("就绪");
+    }
+  }
+
+  function start(){
+    ensureAudio(); audio.resume?.();
+    if(running) return;
+    running=true; setPlayIcon(true);
+
+    const now=audio.currentTime;
+    if(pausedAtT!=null){
+      const delta=now-pausedAtT; pausedAtT=null;
+      if(!inCountIn){ beatStartT+=delta; nextTickT+=delta; }
+      loopOn(); return;
+    }
+    if(countInOn){
+      inCountIn=true; countLeft=4; countNextT=now; setRunState("预…");
+    }else{
+      inCountIn=false; beatStartT=now; nextTickT=now; setRunState("播放");
+    }
+    loopOn();
+  }
+
+  function pause(){
+    if(!running) return;
+    running=false; setPlayIcon(false);
+    pausedAtT=audio?audio.currentTime:(performance.now()/1000);
+    loopOff(); setRunState("暂停");
+    stopBassNow();
+  }
+
+  function reset(){
+    stopBassNow();
+    playBeat=0; playSub=0; uiBeat=0; uiSub=0;
+    editBeat=0; editSub=0;
+    flash={b:-1,s:-1,until:0}; loopIndex=0;
+    inCountIn=false; pausedAtT=null;
+    if(audio && running){ const now=audio.currentTime; beatStartT=now; nextTickT=now; }
+    drawAll();
+    pos.textContent=`1 / 1`; hintPos.textContent="1:1";
+    setRunState(running ? "播放" : "就绪");
+  }
+
+  function scheduler(){
+    if(!running || !audio) return;
+    const now=audio.currentTime;
+
+    if(inCountIn){
+      while(countLeft>0 && countNextT<now+LOOKAHEAD){
+        if(!muteAll) playClickAt(countNextT, sounds["强"].freq, sounds["强"].ms, gStrong);
+        countLeft--; countNextT+=beatSec();
+      }
+      if(countLeft<=0){
+        inCountIn=false;
+        beatStartT=countNextT;
+        nextTickT=beatStartT;
+        setRunState("播放");
+      }
+      return;
+    }
+
+    while(nextTickT<now+LOOKAHEAD){
+      const b=playBeat, s=playSub;
+      const acc=pattern[b][s];
+      const metroOnly=isMetroOnlyLoop();
+
+      if(!muteAll){
+        if(metronomeOn && s===0){
+          playClickAt(nextTickT, metroCfg.freq, metroCfg.ms, gMetro);
+        }
+        if(!metroOnly && acc!=="静音"){
+          const cfg=sounds[acc]||{freq:0,ms:0};
+          const dest = (acc==="强") ? gStrong : gSub;
+          playClickAt(nextTickT, cfg.freq, cfg.ms, dest);
+        }
+        if(!metroOnly){
+          const ev=bassScore[b][s] || {t:"rest"};
+          if(ev.t==="rest"){
+            stopBassNow();
+          }else if(ev.t==="tie"){
+            // "-"
+          }else if(ev.t==="note"){
+            const base=[0,0,2,4,5,7,9,11];
+            const deg=clamp(ev.deg||1,1,7);
+            const acci=ev.acc||0;
+            const sem=(base[deg] + acci + 1200)%12;
+            const midi=36 + sem; // C2 area
+            const hz=440*Math.pow(2,(midi-69)/12);
+            setBassNoteAt(nextTickT, hz);
+          }
+        }
+      }
+
+      const dt=Math.max(0,nextTickT-now);
+      setTimeout(()=>{
+        flash={b,s,until:performance.now()+60};
+        if(pointerMode==="follow"){ uiBeat=b; uiSub=s; } else { uiBeat=b; uiSub=0; }
+        // 同步 bass 编辑指针到简谱指针
+        editBeat=uiBeat; editSub=uiSub;
+
+        drawAll();
+        pos.textContent=`${uiBeat+1} / ${uiSub+1}`;
+        hintPos.textContent=`${uiBeat+1}:${uiSub+1}`;
+      }, dt*1000);
+
+      advanceCursor();
+    }
+  }
+
+  function advanceCursor(){
+    const bs=beatSec();
+    const n=subdiv[playBeat];
+    playSub++;
+    if(playSub>=n){
+      playSub=0;
+      playBeat=(playBeat+1)%beats;
+      beatStartT+=bs;
+      if(playBeat===0 && playSub===0) loopIndex++;
+    }
+    const n2=subdiv[playBeat];
+    nextTickT = beatStartT + playSub*(bs/n2);
+  }
+
+  // ===== draw =====
+  let gridGeom=null;
+
+  function drawAll(){
+    ensurePattern();
+    drawGrid();
+    drawJp();
+    drawBass();
+    beatInfo.textContent=`${beats}`;
+    bigBeatTxt.textContent=`${uiBeat+1}`;
+  }
+
+  function drawGrid(){
+    const W=grid.width,H=grid.height;
+    g.clearRect(0,0,W,H);
+    const grad=g.createRadialGradient(W*0.35,H*0.2,20,W*0.5,H*0.6,W);
+    grad.addColorStop(0,"#0e1426"); grad.addColorStop(1,"#070a12");
+    g.fillStyle=grad; g.fillRect(0,0,W,H);
+
+    const marginL=70, marginR=30, marginT=56, marginB=54;
+    const usableW=W-marginL-marginR;
+    const usableH=H-marginT-marginB;
+
+    const colW = Math.max(56, Math.min(96, Math.floor(usableW / Math.max(1,beats))));
+    const gridW=beats*colW;
+
+    const maxN = Math.max(...subdiv,1);
+    const refCellH = Math.max(46, Math.min(78, Math.floor(usableH / Math.max(1,maxN))));
+    const gridH = Math.max( (maxN)*refCellH, refCellH*4 );
+    const left = marginL + Math.max(0, Math.floor((usableW-gridW)/2));
+    const top  = marginT + Math.max(0, Math.floor((usableH-gridH)/2));
+
+    const plusY = top - 30;
+    const minusY = top + gridH + 34;
+
+    const boundaries=[];
+    for(let b=0;b<beats;b++){
+      const n=subdiv[b];
+      const yB=[];
+      for(let i=0;i<=n;i++) yB.push(top + (i/n)*gridH);
+      boundaries[b]=yB;
+    }
+
+    for(let b=0;b<beats;b++){
+      const cx=left+b*colW+colW/2;
+      mini(cx, plusY, "+");
+      mini(cx, minusY, "−");
+      g.strokeStyle="rgba(255,255,255,.14)";
+      g.lineWidth=2.2;
+      g.beginPath(); g.moveTo(cx, top); g.lineTo(cx, top+gridH); g.stroke();
+    }
+
+    for(let b=0;b<beats;b++){
+      const cx=left+b*colW+colW/2;
+      const yB=boundaries[b];
+      g.save();
+      g.fillStyle="rgba(0,0,0,.10)";
+      for(let i=1;i<yB.length;i++){
+        const y=yB[i];
+        g.beginPath(); g.arc(cx, y, 2.2, 0, Math.PI*2); g.fill();
+      }
+      g.restore();
+
+      for(let s=0;s<subdiv[b];s++){
+        const y0 = yB[s];
+        const segH = yB[s+1] - y0;
+        const iconY = y0 + Math.min(18, Math.max(12, segH * 0.28));
+        const acc = pattern[b][s];
+        const active = (flash.b===b && flash.s===s && performance.now()<flash.until);
+        accent(cx, iconY, acc, active);
+      }
+    }
+
+    function mini(cx,cy,t){
+      g.save();
+      g.fillStyle="rgba(255,255,255,.03)";
+      g.strokeStyle="rgba(255,255,255,.12)";
+      g.lineWidth=1.5;
+      rr(cx-17,cy-13,34,26,11,true,true);
+      g.fillStyle="#e8eaf0"; g.font="16px system-ui";
+      g.textAlign="center"; g.textBaseline="middle";
+      g.fillText(t,cx,cy+1);
+      g.restore();
+    }
+
+    function accent(cx,cy,name,active){
+      g.save();
+      g.lineWidth=active?3:1.8;
+      if(active){
+        g.globalAlpha=0.18;
+        g.fillStyle="rgba(77,163,255,0.85)";
+        g.beginPath(); g.arc(cx,cy,20,0,Math.PI*2); g.fill();
+        g.globalAlpha=1;
+      }
+      g.strokeStyle="#ffffff";
+      g.fillStyle=(active && name!=="静音")?"#ffffff":"transparent";
+      const r=11;
+
+      if(name==="强"){
+        rr(cx-r,cy-r,r*2,r*2,3,false,true);
+      }else if(name==="中强"){
+        g.beginPath(); g.moveTo(cx,cy-r); g.lineTo(cx-r,cy+r); g.lineTo(cx+r,cy+r);
+        g.closePath(); g.stroke(); if(active) g.fill();
+      }else if(name==="弱"){
+        g.beginPath(); g.arc(cx,cy,r,0,Math.PI*2); g.stroke(); if(active) g.fill();
+      }else{
+        g.beginPath(); g.arc(cx,cy,r,0,Math.PI*2); g.stroke();
+        g.beginPath(); g.moveTo(cx-r,cy+r); g.lineTo(cx+r,cy-r); g.stroke();
+      }
+      g.restore();
+    }
+
+    function rr(x,y,w,h,r,fill,stroke){
+      g.beginPath();
+      g.moveTo(x+r,y);
+      g.arcTo(x+w,y,x+w,y+h,r);
+      g.arcTo(x+w,y+h,x,y+h,r);
+      g.arcTo(x,y+h,x,y,r);
+      g.arcTo(x,y,x+w,y,r);
+      g.closePath();
+      if(fill) g.fill();
+      if(stroke) g.stroke();
+    }
+
+    gridGeom = {left, top, colW, gridH, plusY, minusY, boundaries};
+  }
+
+  const needTopN=(n)=> (n===3)||(n>=5);
+  function slotX(canvasW, b, s){
+    const left=18,right=canvasW-18;
+    const beatW=(right-left)/beats;
+    const x1=left+b*beatW;
+    const n=subdiv[b];
+    const effN=(n===1?2:n);
+    const effS=(n===1?0:s);
+    return x1 + (effS+0.5)*(beatW/effN);
+  }
+
+  function drawJp(){
+    const W=jp.width,H=jp.height;
+    j.clearRect(0,0,W,H);
+    const grad=j.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0,"#0b1020"); grad.addColorStop(1,"#070a12");
+    j.fillStyle=grad; j.fillRect(0,0,W,H);
+
+    j.strokeStyle="rgba(255,255,255,.10)";
+    j.lineWidth=2;
+    j.strokeRect(10,10,W-20,H-20);
+
+    const left=18,right=W-18;
+    const beatW=(right-left)/beats;
+    const yTop=42,yGt=58,yX=96,yBeam=128;
+
+    j.strokeStyle="rgba(255,255,255,.08)";
+    j.lineWidth=2;
+    for(let b=0;b<=beats;b++){
+      const x=left+b*beatW;
+      j.beginPath(); j.moveTo(x,18); j.lineTo(x,H-18); j.stroke();
+    }
+
+    const px = slotX(W, uiBeat, uiSub);
+    const c=bpmColor(getBpm()).rgb;
+
+    j.save();
+    j.globalAlpha=0.22; j.strokeStyle=c; j.lineWidth=10;
+    j.beginPath(); j.moveTo(px,22); j.lineTo(px,H-22); j.stroke();
+    j.restore();
+    j.strokeStyle=c; j.lineWidth=4;
+    j.beginPath(); j.moveTo(px,18); j.lineTo(px,H-18); j.stroke();
+
+    for(let b=0;b<beats;b++){
+      const n=subdiv[b];
+      const x1=left+b*beatW, x2=x1+beatW;
+
+      if(needTopN(n)){
+        j.fillStyle="#e8eaf0";
+        j.font="14px system-ui"; j.textAlign="center"; j.textBaseline="alphabetic";
+        j.fillText(`~${n}~`, (x1+x2)/2, yTop-14);
+      }
+
+      const effN = (n===1?2:n);
+      const slotsToDraw = (n===1?1:n);
+
+      for(let s=0;s<slotsToDraw;s++){
+        const x = x1 + (s+0.5)*(beatW/effN);
+        const acc=pattern[b][s];
+        const sym=(acc==="静音")?"0":"X";
+
+        j.fillStyle="#e8eaf0";
+        j.font="22px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+        j.textAlign="center"; j.textBaseline="middle";
+        j.fillText(sym, x, yX);
+
+        if(acc==="强"){
+          j.font="18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+          j.fillText(">", x, yGt);
+        }
+      }
+
+      const lvl = (n<=1?0:(n===2||n===3?1:(n>=4&&n<=7?2:3)));
+      if(lvl>0){
+        const pad=12;
+        j.strokeStyle="#e8eaf0"; j.lineWidth=3;
+        for(let k=0;k<lvl;k++){
+          const yy=yBeam+k*6;
+          j.beginPath(); j.moveTo(x1+pad,yy); j.lineTo(x2-pad,yy); j.stroke();
+        }
+      }
+    }
+  }
+
+  function bassLabel(ev){
+    if(!ev) return "";
+    if(ev.t==="rest") return "0";
+    if(ev.t==="tie") return "-";
+    if(ev.t==="note"){
+      const d=ev.deg||1;
+      const a=ev.acc||0;
+      if(nameMode==="deg"){
+        return String(d) + (a===1?"#":a===-1?"b":"");
+      }else{
+        const names=["","C","D","E","F","G","A","B"];
+        const base=names[d]||"C";
+        if(a===1) return base+"#";
+        if(a===-1) return base+"b";
+        return base;
+      }
+    }
+    return "";
+  }
+
+  function drawBass(){
+    const W=bass.width,H=bass.height;
+    bj.clearRect(0,0,W,H);
+    const grad=bj.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0,"#0b1020"); grad.addColorStop(1,"#070a12");
+    bj.fillStyle=grad; bj.fillRect(0,0,W,H);
+
+    bj.strokeStyle="rgba(255,255,255,.10)";
+    bj.lineWidth=2;
+    bj.strokeRect(10,10,W-20,H-20);
+
+    const left=18,right=W-18;
+    const beatW=(right-left)/beats;
+    const yTop=42, yTxt=98, yBeam=128;
+
+    bj.strokeStyle="rgba(255,255,255,.08)";
+    bj.lineWidth=2;
+    for(let b=0;b<=beats;b++){
+      const x=left+b*beatW;
+      bj.beginPath(); bj.moveTo(x,18); bj.lineTo(x,H-18); bj.stroke();
+    }
+
+    // ✅ Bass 指针与简谱指针同步：用同一 uiBeat/uiSub
+    const px = slotX(W, uiBeat, uiSub);
+    const c=bpmColor(getBpm()).rgb;
+
+    bj.save();
+    bj.globalAlpha=0.22; bj.strokeStyle=c; bj.lineWidth=10;
+    bj.beginPath(); bj.moveTo(px,22); bj.lineTo(px,H-22); bj.stroke();
+    bj.restore();
+    bj.strokeStyle=c; bj.lineWidth=4;
+    bj.beginPath(); bj.moveTo(px,18); bj.lineTo(px,H-18); bj.stroke();
+
+    for(let b=0;b<beats;b++){
+      const n=subdiv[b];
+      const x1=left+b*beatW, x2=x1+beatW;
+
+      if(needTopN(n)){
+        bj.fillStyle="#e8eaf0";
+        bj.font="14px system-ui"; bj.textAlign="center"; bj.textBaseline="alphabetic";
+        bj.fillText(`~${n}~`, (x1+x2)/2, yTop-14);
+      }
+
+      const effN=(n===1?2:n);
+      const slotsToDraw=(n===1?1:n);
+
+      for(let s=0;s<slotsToDraw;s++){
+        const x = x1 + (s+0.5)*(beatW/effN);
+        const ev=bassScore[b][s] || {t:"rest"};
+        const sym=bassLabel(ev);
+
+        bj.fillStyle="#e8eaf0";
+        bj.font="20px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+        bj.textAlign="center"; bj.textBaseline="middle";
+        bj.fillText(sym, x, yTxt);
+      }
+
+      const lvl = (n<=1?0:(n===2||n===3?1:(n>=4&&n<=7?2:3)));
+      if(lvl>0){
+        const pad=12;
+        bj.strokeStyle="#e8eaf0"; bj.lineWidth=3;
+        for(let k=0;k<lvl;k++){
+          const yy=yBeam+k*6;
+          bj.beginPath(); bj.moveTo(x1+pad,yy); bj.lineTo(x2-pad,yy); bj.stroke();
+        }
+      }
+    }
+  }
+
+  // ===== hit test grid =====
+  function gridHit(mx,my){
+    if(!gridGeom) return null;
+    const {left, top, colW, gridH, plusY, minusY, boundaries} = gridGeom;
+
+    const b=Math.floor((mx-left)/colW);
+    if(b<0||b>=beats) return null;
+
+    const cx=left+b*colW+colW/2;
+
+    const inPlus = (Math.abs(mx-cx)<=20)&&(Math.abs(my-plusY)<=16);
+    const inMinus= (Math.abs(mx-cx)<=20)&&(Math.abs(my-minusY)<=16);
+    if(inPlus) return {type:"subPlus",b};
+    if(inMinus) return {type:"subMinus",b};
+
+    if(my<top-2 || my>top+gridH+2) return null;
+
+    const yB=boundaries[b];
+    const n=yB.length-1;
+    const rel=Math.max(0, Math.min(gridH-1e-6, my-top));
+    let s=Math.floor(rel/(gridH/n));
+    s=Math.max(0, Math.min(n-1, s));
+
+    const hitX = Math.abs(mx-cx) <= colW*0.45;
+    if(!hitX) return null;
+    return {type:"cell",b,s};
+  }
+
+  const cycleAccent=(name)=> {
+    const i=accents.indexOf(name);
+    return accents[(i<0?0:i+1)%accents.length];
+  };
+
+  grid.addEventListener("contextmenu", e=>e.preventDefault());
+  grid.addEventListener("mousemove", (e)=>{
+    const rect=grid.getBoundingClientRect();
+    const mx=(e.clientX-rect.left)*(grid.width/rect.width);
+    const my=(e.clientY-rect.top )*(grid.height/rect.height);
+    const hit=gridHit(mx,my);
+    if(hit?.type==="cell"){
+      setHelp(`格子：左键切换音色；右键选择音色（${hit.b+1}:${hit.s+1}）`);
+      hintPos.textContent=`${hit.b+1}:${hit.s+1}`;
+    }else if(hit?.type==="subPlus"){
+      setHelp(`该列细分 +1（Beat ${hit.b+1}）`); hintPos.textContent=`${hit.b+1}:+`;
+    }else if(hit?.type==="subMinus"){
+      setHelp(`该列细分 -1（Beat ${hit.b+1}）`); hintPos.textContent=`${hit.b+1}:-`;
+    }else{
+      setHelp(grid.getAttribute("data-help")); hintPos.textContent="";
+    }
+  });
+  grid.addEventListener("mouseleave", ()=>{ setHelp(""); hintPos.textContent=""; });
+
+  grid.addEventListener("mousedown", (e)=>{
+    const rect=grid.getBoundingClientRect();
+    const mx=(e.clientX-rect.left)*(grid.width/rect.width);
+    const my=(e.clientY-rect.top )*(grid.height/rect.height);
+    const hit=gridHit(mx,my);
+    if(!hit){ hideMenu(); return; }
+    pause();
+    if(hit.type==="subPlus"){
+      subdiv[hit.b]=clamp(subdiv[hit.b]+1,SUB_MIN,SUB_MAX);
+      ensurePattern(); drawAll(); return;
+    }
+    if(hit.type==="subMinus"){
+      subdiv[hit.b]=clamp(subdiv[hit.b]-1,SUB_MIN,SUB_MAX);
+      ensurePattern(); drawAll(); return;
+    }
+    if(hit.type==="cell"){
+      const {b,s}=hit;
+      if(e.button===2) showMenu(e.clientX,e.clientY,b,s);
+      else{
+        hideMenu();
+        pattern[b][s]=cycleAccent(pattern[b][s]);
+        drawAll();
+      }
+    }
+  });
+
+  function hideMenu(){ menu.style.display="none"; }
+  function showMenu(x,y,b,s){
+    menu.innerHTML="";
+    menu.appendChild(it(`${b+1}:${s+1}`,null,true));
+    hr();
+    accents.forEach(a=>{
+      menu.appendChild(it(`${a}`, ()=>{
+        pattern[b][s]=a; ensurePattern(); drawAll(); hideMenu();
+      }));
+    });
+    menu.appendChild(it("取消", hideMenu));
+
+    menu.style.left=x+"px";
+    menu.style.top=y+"px";
+    menu.style.display="block";
+
+    function it(text, fn, disabled=false){
+      const d=document.createElement("div");
+      d.className="it"; d.textContent=text;
+      if(disabled){ d.style.opacity="0.7"; d.style.cursor="default"; }
+      else d.onclick=fn;
+      return d;
+    }
+    function hr(){
+      const h=document.createElement("div");
+      h.className="hr"; menu.appendChild(h);
+    }
+  }
+  window.addEventListener("click", ()=>{ if(menu.style.display==="block") hideMenu(); });
+  window.addEventListener("keydown",(e)=>{ if(e.key==="Escape") hideMenu(); });
+
+  // ===== Bass editor (步进录入；编辑位置=当前指针 uiBeat/uiSub) =====
+  function accModeLabel(){ return accMode===0 ? "∎" : (accMode===1 ? "#" : "b"); }
+
+  function applyKeyLabels(){
+    accBtn.textContent=accModeLabel();
+
+    // 1/C 切换时，键帽也切换成 CDEFGAB
+    const degToLet = (d)=>["","C","D","E","F","G","A","B"][d] || "C";
+    degBtns.forEach(btn=>{
+      const d=+btn.dataset.deg;
+      const base = (nameMode==="deg") ? String(d) : degToLet(d);
+      const accTxt = (accMode===1)?"#":(accMode===-1)?"b":"";
+      btn.textContent = base + accTxt;
+    });
+
+  
+  }
+
+  accBtn.addEventListener("click", ()=>{
+    accMode = (accMode===0)?1:(accMode===1)?-1:0;
+    applyKeyLabels();
+  });
+
+  nameBtn.addEventListener("click", ()=>{
+    nameMode = (nameMode==="deg") ? "let" : "deg";
+    applyKeyLabels();
+    drawBass();
+  });
+
+  function advanceEdit(){
+    let b=editBeat, s=editSub;
+    s++;
+    if(s>=subdiv[b]){
+      s=0; b=(b+1)%beats;
+    }
+    // 录入光标推进，但播放/显示指针仍由 uiBeat/uiSub 决定
+    editBeat=b; editSub=s;
+    uiBeat=b; uiSub=s; // ✅ 同步（你要求 bass 编辑指针与简谱指针同步）
+    drawAll();
+    pos.textContent=`${uiBeat+1} / ${uiSub+1}`;
+  }
+
+  function writeBass(ev){
+    stopBassNow();
+    bassScore[editBeat][editSub]=ev;
+    advanceEdit();
+  }
+
+  restBtn.addEventListener("click", ()=>writeBass({t:"rest"}));
+  tieBtn.addEventListener("click", ()=>writeBass({t:"tie"}));
+  degBtns.forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const deg=+btn.dataset.deg;
+      writeBass({t:"note", deg, acc:accMode});
+    });
+  });
+
+  function bassHit(mx){
+    const W=bass.width;
+    const left=18,right=W-18;
+    const beatW=(right-left)/beats;
+    const b=Math.floor((mx-left)/beatW);
+    if(b<0||b>=beats) return null;
+
+    const n=subdiv[b];
+    const effN=(n===1?2:n);
+    const x1=left+b*beatW;
+    const relx=mx-x1;
+    let s=Math.floor(relx/(beatW/effN));
+    if(n===1) s=0;
+    s=Math.max(0, Math.min((n===1?0:n-1), s));
+    return {b,s};
+  }
+
+  bass.addEventListener("mousedown",(e)=>{
+    const rect=bass.getBoundingClientRect();
+    const mx=(e.clientX-rect.left)*(bass.width/rect.width);
+    const hit=bassHit(mx);
+    if(!hit) return;
+    pause();
+
+    // 点击 bass 谱：设置录入位置，并同步简谱指针
+    editBeat=hit.b; editSub=hit.s;
+    uiBeat=hit.b; uiSub=hit.s;
+    playBeat=hit.b; playSub=hit.s; // 方便从这里继续
+    loopIndex=0;
+
+    drawAll();
+    pos.textContent=`${uiBeat+1} / ${uiSub+1}`;
+  });
+
+  // ===== quiz =====
+  const pickWeighted=(values,weights)=>{
+    const total=weights.reduce((a,b)=>a+b,0);
+    let r=Math.random()*total;
+    for(let i=0;i<values.length;i++){ r-=weights[i]; if(r<0) return values[i]; }
+    return values[0];
+  };
+
+  function generateQuiz(diff){
+    pause(); ensurePattern();
+
+    const pools={
+      1:[1,2],
+      2:[1,2],
+      3:[1,2,4],
+      4:[1,2,3,4,6,8],
+      5:[1,2,3,4,5,6,7,8],
+    };
+    const allowed=pools[diff]||[1,2];
+    const weights=allowed.map(n=>{
+      if(diff===1) return (n===1?10 : n===2?8 : 1);
+      if(diff===2) return (n===1?8  : n===2?8 : 2);
+      if(diff===3) return ((n===1||n===2)?6 : 5);
+      if(diff===4) return ((n===1||n===2)?5 : ([3,4].includes(n)?4:3));
+      return ([1,2,3,4].includes(n)?4:3);
+    });
+    const pSound=({1:0.80,2:0.74,3:0.68,4:0.62,5:0.60})[diff] ?? 0.7;
+
+    let anySound=false;
+    const newSub=[], newPat=[];
+    for(let b=0;b<beats;b++){
+      const n=pickWeighted(allowed,weights);
+      const mask=Array.from({length:n}, ()=> (Math.random()<pSound ? 1 : 0));
+      const sum=mask.reduce((a,x)=>a+x,0);
+
+      if(sum===0){ newSub.push(1); newPat.push(["静音"]); continue; }
+      anySound=true;
+      newSub.push(n);
+
+      const col=[];
+      for(let s=0;s<n;s++){
+        if(mask[s]===0) col.push("静音");
+        else col.push( (s===0) ? (b===0?"强":"中强") : "弱" );
+      }
+      newPat.push(col);
+    }
+    if(!anySound){ newSub[0]=1; newPat[0]=["强"]; }
+
+    subdiv=newSub.map(x=>clamp(x,SUB_MIN,SUB_MAX));
+    pattern=newPat;
+
+    ensurePattern();
+    defaultBassFromPattern();
+
+    playBeat=0; playSub=0;
+    uiBeat=0; uiSub=0;
+    editBeat=0; editSub=0;
+    loopIndex=0;
+
+    drawAll();
+    pos.textContent=`1 / 1`;
+   
+  }
+  quizBtns.forEach(btn=>btn.addEventListener("click", ()=>generateQuiz(+btn.dataset.diff)));
+
+  // ===== TAP =====
+  let tapTimes=[];
+  tapBtn.onclick=()=>{
+    const now=performance.now();
+    if(tapTimes.length && (now-tapTimes[tapTimes.length-1]>TAP_RESET_MS)) tapTimes=[];
+    tapTimes.push(now);
+    if(tapTimes.length>=4){
+      let sum=0;
+      for(let i=1;i<tapTimes.length;i++) sum+=(tapTimes[i]-tapTimes[i-1]);
+      const avg=sum/(tapTimes.length-1);
+      setBpm(Math.round(60000/Math.max(1,avg)));
+      stopBassNow();
+    }
+  };
+
+  // ===== controls =====
+  beatMinus.onclick=()=>{ pause(); beats=clamp(beats-1,BEATS_MIN,BEATS_MAX); ensurePattern(); drawAll(); };
+  beatPlus.onclick =()=>{ pause(); beats=clamp(beats+1,BEATS_MIN,BEATS_MAX); ensurePattern(); drawAll(); };
+
+  countInChk.onchange=()=>{ countInOn=countInChk.checked; stopBassNow(); };
+
+  playBtn.onclick=()=>{ running?pause():start(); };
+  resetBtn.onclick=reset;
+
+  // ===== sound dialog =====
+  function openSound(){
+    ensureAudio();
+    const soundDraft=structuredClone(sounds);
+    tbl.innerHTML="";
+    accents.forEach(name=>{
+      const lab=document.createElement("div");
+      lab.textContent=name; lab.style.fontWeight="950";
+      const f=document.createElement("input"); f.type="number"; f.min=0; f.max=8000; f.value=(soundDraft[name]?.freq??0);
+      const ms=document.createElement("input"); ms.type="number"; ms.min=0; ms.max=200; ms.value=(soundDraft[name]?.ms??0);
+      const t=document.createElement("button"); t.textContent="试听";
+      t.onclick=()=>{ const now=audio.currentTime+0.01; playClickAt(now, clamp(+f.value,0,8000), clamp(+ms.value,0,200), (name==="强"?gStrong:gSub)); };
+      f.onchange=()=>{ soundDraft[name]=soundDraft[name]||{freq:0,ms:0}; soundDraft[name].freq=clamp(+f.value,0,8000); };
+      ms.onchange=()=>{ soundDraft[name]=soundDraft[name]||{freq:0,ms:0}; soundDraft[name].ms=clamp(+ms.value,0,200); };
+      tbl.appendChild(lab); tbl.appendChild(f); tbl.appendChild(ms); tbl.appendChild(t);
+    });
+    mFreq.value=metroCfg.freq; mMs.value=metroCfg.ms;
+    testM.onclick=()=>{ const now=audio.currentTime+0.01; playClickAt(now, clamp(+mFreq.value,0,8000), clamp(+mMs.value,0,200), gMetro); };
+    applyDlg.onclick=()=>{
+      pause();
+      Object.assign(sounds, soundDraft);
+      metroCfg={freq:clamp(+mFreq.value,0,8000), ms:clamp(+mMs.value,0,200)};
+      bufCache.clear();
+      dlg.close();
+    };
+    dlg.showModal();
+  }
+  closeDlg.onclick=()=>dlg.close();
+  soundBtn.onclick=openSound;
+
+  // ===== init =====
+  function init(){
+    ensurePattern();
+    defaultBassFromPattern();
+    countInOn=countInChk.checked;
+    syncModeUI();
+    syncTeachUI();
+    syncMuteUI();
+    syncMetroUI();
+    syncBigUI();
+
+    setPlayIcon(false);
+    setBpm(60);
+    applyKeyLabels();
+    hookSliders();
+
+    drawAll();
+    beatInfo.textContent=`${beats}`;
+    pos.textContent=`${uiBeat+1} / ${uiSub+1}`;
+    hintPos.textContent="1:1";
+    setRunState("就绪");
+  }
+  init();
+})();
+</script>
+
+
+</body></html>
