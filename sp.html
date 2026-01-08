@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鼓谱认识</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .header p {
+            color: #7f8c8d;
+            margin: 5px 0 0 0;
+            font-size: 12px;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+            flex: 1;
+        }
+        
+        .staff-container {
+            background-color: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border: 1px solid #ddd;
+            width: 100%;
+            max-width: 280px;
+        }
+        
+        .staff-title {
+            text-align: center;
+            color: #3498db;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .drum-staff {
+            width: 100%;
+            max-width: 200px;
+            height: 160px;
+            background-color: white;
+            position: relative;
+            margin: 0 auto;
+        }
+        
+        /* 间 - 保留长方形，保持原样 */
+        .space {
+            height: 25px;
+            background-color: #ffffff;
+            position: relative;
+        }
+        
+        /* 线 - 只用细线表示，保持原样 */
+        .line {
+            height: 2px;
+            background-color: #2c3e50;
+            position: relative;
+        }
+        
+        /* 上加一线（六线）- 保持原样 */
+        .first-line {
+            height: 2px;
+            background-color: #95a5a6;
+            position: relative;
+            margin: 0 47%;
+        }
+        
+        /* 圆点样式 - 保持原样 */
+        .note-dot {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background-color: #e74c3c;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            display: none;
+        }
+        
+        /* X标记样式 - 保持原样 */
+        .note-x {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            display: none;
+        }
+        
+        .note-x::before,
+        .note-x::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 3px;
+            background-color: #3498db;
+            top: 50%;
+            left: 0;
+        }
+        
+        .note-x::before {
+            transform: translateY(-50%) rotate(45deg);
+        }
+        
+        .note-x::after {
+            transform: translateY(-50%) rotate(-45deg);
+        }
+        
+        /* 矩阵容器 */
+        .matrix-container {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border: 1px solid #ddd;
+            width: 100%;
+        }
+        
+        .matrix-title {
+            text-align: center;
+            color: #3498db;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        /* 严格的4x4布局 - 空白单元格使用几乎看不见的颜色 */
+        .drum-matrix {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 6px;
+        }
+        
+        .matrix-cell {
+            height: 55px;
+            background-color: #f0f8ff;
+            border: 2px solid #3498db;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 5px;
+        }
+        
+        .matrix-cell:hover {
+            background-color: #e3f2fd;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.2);
+        }
+        
+        .matrix-cell.active {
+            background-color: #3498db;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(52, 152, 219, 0.3);
+        }
+        
+        .matrix-cell.correct {
+            background-color: #2ecc71;
+            border-color: #27ae60;
+            color: white;
+        }
+        
+        .matrix-cell.wrong {
+            background-color: #e74c3c;
+            border-color: #c0392b;
+            color: white;
+        }
+        
+        /* 空白单元格 - 使用几乎看不见的颜色但保持占位 */
+        .matrix-cell.empty {
+            background-color: #fafafa;
+            border-color: #f5f5f5;
+            cursor: default;
+        }
+        
+        .matrix-cell.empty:hover {
+            background-color: #fafafa;
+            transform: none;
+            box-shadow: none;
+            border-color: #f5f5f5;
+        }
+        
+        .matrix-cell.empty .drum-name,
+        .matrix-cell.empty .drum-name-en {
+            color: #f5f5f5; /* 几乎看不见的颜色 */
+        }
+        
+        /* 放大中文名称 */
+        .drum-name {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 2px;
+            text-align: center;
+            color: #2c3e50;
+        }
+        
+        .drum-name-en {
+            font-size: 10px;
+            color: #666;
+            text-align: center;
+            opacity: 0.8;
+        }
+        
+        .matrix-cell.active .drum-name,
+        .matrix-cell.active .drum-name-en,
+        .matrix-cell.correct .drum-name,
+        .matrix-cell.correct .drum-name-en,
+        .matrix-cell.wrong .drum-name,
+        .matrix-cell.wrong .drum-name-en {
+            color: white;
+        }
+        
+        /* 精简的出题栏 - 放到最下面 */
+        .quiz-controls {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border: 1px solid #ddd;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .quiz-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .quiz-buttons {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+        
+        .quiz-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            flex: 1;
+        }
+        
+        .quiz-button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+        
+        .quiz-button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .end-button {
+            background-color: #e74c3c;
+        }
+        
+        .end-button:hover {
+            background-color: #c0392b;
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+        }
+        
+        .result-feedback {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 10px;
+            background-color: #f8fafc;
+            border-radius: 6px;
+            border: 1px solid #e0e6ed;
+        }
+        
+        .result-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .result-correct {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .result-wrong {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .result-waiting {
+            background-color: #f39c12;
+            color: white;
+        }
+        
+        .result-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            text-align: center;
+            flex: 1;
+        }
+        
+        .result-text.correct {
+            color: #27ae60;
+        }
+        
+        .result-text.wrong {
+            color: #c0392b;
+        }
+        
+        .footer {
+            margin-top: 15px;
+            color: #7f8c8d;
+            font-size: 11px;
+            text-align: center;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>
+    <a href="index.html" style="text-decoration: none; color: #3498db; margin-right: 10px; font-size: 20px;">⇦</a>
+    识谱教程
+</h1>
+        <p>点击鼓部件查看其在五线谱上的位置</p>
+    </div>
+    
+    <div class="main-content">
+        <div class="staff-container">
+            <div class="staff-title"></div>
+            <div class="drum-staff">
+                <!-- 线间结构 -->
+                <div class="first-line">
+                    <div class="note-x" id="crash-note"></div>
+                </div>
+                <div class="space">
+                    <div class="note-x" id="hihat-note"></div>
+                </div>
+                <div class="line">
+                    <div class="note-x" id="ride-note"></div>
+                </div>
+                <div class="space">
+                    <div class="note-dot" id="hitem-note"></div>
+                </div>
+                <div class="line">
+                    <div class="note-dot" id="midtom-note"></div>
+                </div>
+                <div class="space">
+                    <div class="note-dot" id="snare-note"></div>
+                </div>
+                <div class="line"></div>
+                <div class="space">
+                    <div class="note-dot" id="floortom-note"></div>
+                </div>
+                <div class="line"></div>
+                <div class="space">
+                    <div class="note-dot" id="kick-note"></div>
+                </div>
+                <div class="line">
+                    <div class="note-x" id="hihatpedal-note"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="matrix-container">
+            <div class="matrix-title"></div>
+            <div class="drum-matrix">
+                <!-- 第一行 -->
+                <div class="matrix-cell empty">
+                    <div class="drum-name">空白</div>
+                    <div class="drum-name-en">Empty</div>
+                </div>
+                <div class="matrix-cell" data-note="crash1">
+                    <div class="drum-name">吊镲1</div>
+                    <div class="drum-name-en">Crash 1</div>
+                </div>
+                <div class="matrix-cell empty">
+                    <div class="drum-name">空白</div>
+                    <div class="drum-name-en">Empty</div>
+                </div>
+                <div class="matrix-cell" data-note="crash2">
+                    <div class="drum-name">吊镲2</div>
+                    <div class="drum-name-en">Crash 2</div>
+                </div>
+                
+                <!-- 第二行 -->
+                <div class="matrix-cell" data-note="hihat">
+                    <div class="drum-name">踩镲</div>
+                    <div class="drum-name-en">Hi-hat</div>
+                </div>
+                <div class="matrix-cell" data-note="hitem">
+                    <div class="drum-name">高音嗵鼓</div>
+                    <div class="drum-name-en">Hi-Tom</div>
+                </div>
+                <div class="matrix-cell" data-note="midtom">
+                    <div class="drum-name">中音嗵鼓</div>
+                    <div class="drum-name-en">Mid-Tom</div>
+                </div>
+                <div class="matrix-cell" data-note="ride">
+                    <div class="drum-name">叮叮镲</div>
+                    <div class="drum-name-en">Ride</div>
+                </div>
+                
+                <!-- 第三行 -->
+                <div class="matrix-cell empty">
+                    <div class="drum-name">空白</div>
+                    <div class="drum-name-en">Empty</div>
+                </div>
+                <div class="matrix-cell" data-note="snare">
+                    <div class="drum-name">军鼓</div>
+                    <div class="drum-name-en">Snare</div>
+                </div>
+                <div class="matrix-cell empty">
+                    <div class="drum-name">空白</div>
+                    <div class="drum-name-en">Empty</div>
+                </div>
+                <div class="matrix-cell" data-note="floortom">
+                    <div class="drum-name">地嗵鼓</div>
+                    <div class="drum-name-en">Floor Tom</div>
+                </div>
+                
+                <!-- 第四行 -->
+                <div class="matrix-cell" data-note="hihatpedal">
+                    <div class="drum-name">踩镲踏板</div>
+                    <div class="drum-name-en">Hi-hat Pedal</div>
+                </div>
+                <div class="matrix-cell empty">
+                    <div class="drum-name">空白</div>
+                    <div class="drum-name-en">Empty</div>
+                </div>
+                <div class="matrix-cell" data-note="kickpedal">
+                    <div class="drum-name">底鼓踏板</div>
+                    <div class="drum-name-en">Kick Pedal</div>
+                </div>
+                <div class="matrix-cell empty">
+                    <div class="drum-name">空白</div>
+                    <div class="drum-name-en">Empty</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 精简的出题栏 - 放到最下面 -->
+        <div class="quiz-controls">
+            <div class="quiz-section">
+                <div class="quiz-buttons">
+                    <button class="quiz-button" id="quiz-button">开始出题</button>
+                    <button class="quiz-button end-button" id="end-button" disabled>结束答题</button>
+                </div>
+                
+                <div class="result-feedback">
+                    <div class="result-text" id="result-text">等待出题</div>
+                    <div class="result-icon" id="result-icon">?</div>
+                </div>
+            </div>
+        </div>
+    </div>
+  
+
+    <script>
+        // 获取所有可点击的单元格
+        const matrixCells = document.querySelectorAll('.matrix-cell:not(.empty)');
+        
+        // 音符元素映射
+        const noteElements = {
+            'crash1': document.getElementById('crash-note'),
+            'crash2': document.getElementById('crash-note'),
+            'hihat': document.getElementById('hihat-note'),
+            'ride': document.getElementById('ride-note'),
+            'hitem': document.getElementById('hitem-note'),
+            'midtom': document.getElementById('midtom-note'),
+            'snare': document.getElementById('snare-note'),
+            'floortom': document.getElementById('floortom-note'),
+            'kickpedal': document.getElementById('kick-note'),
+            'hihatpedal': document.getElementById('hihatpedal-note')
+        };
+        
+        // 音符与鼓部件的映射关系
+        const noteToDrumMap = {
+            'crash-note': ['crash1', 'crash2'],
+            'hihat-note': ['hihat'],
+            'ride-note': ['ride'],
+            'hitem-note': ['hitem'],
+            'midtom-note': ['midtom'],
+            'snare-note': ['snare'],
+            'floortom-note': ['floortom'],
+            'kick-note': ['kickpedal'],
+            'hihatpedal-note': ['hihatpedal']
+        };
+        
+        // 鼓部件名称映射
+        const drumNameMap = {
+            'crash1': {zh: '吊镲1', en: 'Crash 1'},
+            'crash2': {zh: '吊镲2', en: 'Crash 2'},
+            'hihat': {zh: '踩镲', en: 'Hi-hat'},
+            'ride': {zh: '叮叮镲', en: 'Ride'},
+            'hitem': {zh: '高音嗵鼓', en: 'Hi-Tom'},
+            'midtom': {zh: '中音嗵鼓', en: 'Mid-Tom'},
+            'snare': {zh: '军鼓', en: 'Snare'},
+            'floortom': {zh: '地嗵鼓', en: 'Floor Tom'},
+            'kickpedal': {zh: '底鼓踏板', en: 'Kick Pedal'},
+            'hihatpedal': {zh: '踩镲踏板', en: 'Hi-hat Pedal'}
+        };
+        
+        // 游戏状态
+        let gameState = {
+            currentNote: null,
+            currentNoteElement: null,
+            isQuizActive: false,
+            selectedCell: null,
+            score: {
+                correct: 0,
+                wrong: 0
+            }
+        };
+        
+        // DOM元素
+        const quizButton = document.getElementById('quiz-button');
+        const endButton = document.getElementById('end-button');
+        const resultIcon = document.getElementById('result-icon');
+        const resultText = document.getElementById('result-text');
+        
+        // 音符ID到元素ID的映射
+        const noteIdToElementId = {
+            'crash-note': 'crash1',
+            'hihat-note': 'hihat',
+            'ride-note': 'ride',
+            'hitem-note': 'hitem',
+            'midtom-note': 'midtom',
+            'snare-note': 'snare',
+            'floortom-note': 'floortom',
+            'kick-note': 'kickpedal',
+            'hihatpedal-note': 'hihatpedal'
+        };
+        
+        // 可用音符列表（使用音符ID）
+        const availableNoteIds = Object.keys(noteToDrumMap);
+        
+        // 随机选择一个音符ID
+        function getRandomNoteId() {
+            const randomIndex = Math.floor(Math.random() * availableNoteIds.length);
+            return availableNoteIds[randomIndex];
+        }
+        
+        // 显示音符
+        function showNote(noteId) {
+            // 隐藏所有音符
+            Object.values(noteElements).forEach(element => {
+                if (element) element.style.display = 'none';
+            });
+            
+            // 获取对应的元素ID
+            const elementId = noteIdToElementId[noteId];
+            const noteElement = noteElements[elementId];
+            
+            // 显示指定音符
+            if (noteElement) {
+                noteElement.style.display = 'block';
+            }
+            
+            // 更新游戏状态
+            gameState.currentNote = noteId;
+            gameState.currentNoteElement = elementId;
+        }
+        
+        // 开始新的题目
+        function startNewQuestion() {
+            // 重置状态
+            gameState.isQuizActive = true;
+            gameState.selectedCell = null;
+            
+            // 移除所有单元格的样式
+            matrixCells.forEach(cell => {
+                cell.classList.remove('active', 'correct', 'wrong');
+            });
+            
+            // 重置结果图标
+            resultIcon.className = 'result-icon result-waiting';
+            resultIcon.textContent = '?';
+            resultText.textContent = '请选择对应的鼓部件';
+            resultText.className = 'result-text';
+            
+            // 随机选择一个音符ID
+            const noteId = getRandomNoteId();
+            showNote(noteId);
+            
+            // 更新按钮状态
+            quizButton.disabled = true;
+            quizButton.textContent = '答题中...';
+            endButton.disabled = false;
+        }
+        
+        // 结束答题
+        function endQuiz() {
+            // 重置游戏状态
+            gameState.isQuizActive = false;
+            gameState.currentNote = null;
+            gameState.selectedCell = null;
+            
+            // 移除所有单元格的样式
+            matrixCells.forEach(cell => {
+                cell.classList.remove('active', 'correct', 'wrong');
+            });
+            
+            // 隐藏所有音符
+            Object.values(noteElements).forEach(element => {
+                if (element) element.style.display = 'none';
+            });
+            
+            // 重置结果栏
+            resultIcon.className = 'result-icon result-waiting';
+            resultIcon.textContent = '?';
+            resultText.textContent = '等待出题';
+            resultText.className = 'result-text';
+            
+            // 更新按钮状态
+            quizButton.disabled = false;
+            quizButton.textContent = '开始出题';
+            endButton.disabled = true;
+        }
+        
+        // 检查答案
+        function checkAnswer(selectedDrum) {
+            if (!gameState.isQuizActive || !gameState.currentNote) return;
+            
+            // 获取正确答案
+            const correctDrums = noteToDrumMap[gameState.currentNote];
+            const isCorrect = correctDrums.includes(selectedDrum);
+            
+            // 更新分数
+            if (isCorrect) {
+                gameState.score.correct++;
+                resultIcon.className = 'result-icon result-correct';
+                resultIcon.textContent = '✓';
+                resultText.textContent = '正确！';
+                resultText.classList.add('correct');
+            } else {
+                gameState.score.wrong++;
+                resultIcon.className = 'result-icon result-wrong';
+                resultIcon.textContent = '✗';
+                resultText.textContent = '错误！';
+                resultText.classList.add('wrong');
+                
+                // 显示正确答案
+                const correctCell = document.querySelector(`.matrix-cell[data-note="${correctDrums[0]}"]`);
+                if (correctCell) {
+                    correctCell.classList.add('correct');
+                }
+            }
+            
+            // 更新选择的单元格样式
+            const selectedCell = document.querySelector(`.matrix-cell[data-note="${selectedDrum}"]`);
+            if (selectedCell) {
+                if (isCorrect) {
+                    selectedCell.classList.add('correct');
+                } else {
+                    selectedCell.classList.add('wrong');
+                }
+            }
+            
+            // 更新游戏状态
+            gameState.isQuizActive = false;
+            
+            // 更新按钮状态
+            quizButton.disabled = false;
+            quizButton.textContent = '下一题';
+            endButton.disabled = false;
+        }
+        
+        // 普通点击显示音符（非出题模式）
+        function showNoteOnClick(selectedDrum) {
+            if (gameState.isQuizActive) return; // 出题模式下不执行此功能
+            
+            // 移除所有单元格的样式
+            matrixCells.forEach(cell => {
+                cell.classList.remove('active');
+            });
+            
+            // 标记当前选择
+            const selectedCell = document.querySelector(`.matrix-cell[data-note="${selectedDrum}"]`);
+            if (selectedCell) {
+                selectedCell.classList.add('active');
+            }
+            
+            // 隐藏所有音符
+            Object.values(noteElements).forEach(element => {
+                if (element) element.style.display = 'none';
+            });
+            
+            // 显示对应的音符
+            const elementId = drumNameMap[selectedDrum] ? selectedDrum : null;
+            if (elementId && noteElements[elementId]) {
+                noteElements[elementId].style.display = 'block';
+            }
+            
+            // 更新结果栏显示
+            const drumName = drumNameMap[selectedDrum];
+            if (drumName) {
+                resultText.textContent = `当前显示：${drumName.zh}`;
+                resultText.className = 'result-text';
+                resultIcon.className = 'result-icon result-waiting';
+                resultIcon.textContent = '♪';
+            }
+        }
+        
+        // 点击事件处理
+        matrixCells.forEach(cell => {
+            cell.addEventListener('click', function() {
+                const selectedDrum = this.dataset.note;
+                
+                if (gameState.isQuizActive) {
+                    // 出题模式下检查答案
+                    checkAnswer(selectedDrum);
+                } else {
+                    // 非出题模式下显示音符位置
+                    showNoteOnClick(selectedDrum);
+                }
+            });
+        });
+        
+        // 出题按钮点击事件
+        quizButton.addEventListener('click', function() {
+            if (gameState.isQuizActive) {
+                // 如果在答题中，点击"下一题"
+                startNewQuestion();
+            } else {
+                // 如果不在答题中，点击"开始出题"
+                startNewQuestion();
+            }
+        });
+        
+        // 结束答题按钮点击事件
+        endButton.addEventListener('click', function() {
+            endQuiz();
+        });
+        
+        // 页面加载时确保所有音符隐藏
+        window.addEventListener('load', function() {
+            Object.values(noteElements).forEach(element => {
+                if (element) element.style.display = 'none';
+            });
+            
+            // 初始状态：结束按钮禁用
+            endButton.disabled = true;
+        });
+    </script>
+</body>
+</html>
