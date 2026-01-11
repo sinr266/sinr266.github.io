@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>节奏卡片练习</title>
+<style>
+:root {
+  --bg: #0f131f;
+  --card-bg: #1a1f2e;
+  --border: #2a324f;
+  --text: #e2e7f2;
+  --accent: #4a6fff;
+  --muted: #6b7a9f;
+  --green: #4CAF50;
+  --orange: #FF9800;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  padding: 15px;
+  margin: 0 auto;
+  min-width: 320px;
+  line-height: 1.5;
+}
+
+header {
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+h1 {
+  font-size: 22px;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+.subtitle {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 15px;
+  background: var(--card-bg);
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 150px;
+}
+
+.control-group label {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.card-count-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#cardCount {
+  flex: 1;
+  height: 6px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+#cardCount::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid rgba(255,255,255,0.8);
+}
+
+#cardCount::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid rgba(255,255,255,0.8);
+  border-radius: 50%;
+}
+
+#countDisplay {
+  font-size: 13px;
+  color: var(--accent);
+  min-width: 40px;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* 下拉菜单样式 - 修复文字颜色问题 */
+.select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+#difficultySelect, #cardType {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 35px 8px 12px;
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+#difficultySelect:focus, #cardType:focus {
+  border-color: var(--accent);
+}
+
+/* 下拉箭头 */
+.select-wrapper::after {
+  content: "▼";
+  font-size: 10px;
+  color: var(--muted);
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+/* 下拉选项样式 */
+#difficultySelect option, #cardType option {
+  background: var(--card-bg);
+  color: var(--text);
+  padding: 8px;
+  font-size: 13px;
+}
+
+/* 特殊样式：混合模式的"我全会了" */
+#difficultySelect option.mix-ultimate {
+  color: var(--orange) !important;
+  font-weight: 600 !important;
+}
+
+.quiz-btn {
+  background: var(--accent);
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  width: 100%;
+  margin-top: 5px;
+}
+
+.quiz-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* 卡片展示区 */
+.cards-display {
+  width: 100%;
+  margin-bottom: 15px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  padding: 10px;
+}
+
+.cards-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: center;
+  min-width: min-content;
+}
+
+/* 卡片尺寸 - 简洁版（无下方文字） */
+.card-slot {
+  width: 240px;
+  height: 400px;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.card-slot:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.card-slot img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 20px;
+}
+
+/* 卡片加载失败时显示卡片ID */
+.card-fallback {
+  display: none;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--accent);
+  text-align: center;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  font-family: monospace;
+}
+
+.card-info {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 15px;
+  min-height: 80px;
+}
+
+.info-placeholder {
+  color: var(--muted);
+  text-align: center;
+  font-style: italic;
+  line-height: 1.5;
+  padding: 10px 0;
+  font-size: 14px;
+}
+
+.card-details {
+  display: none;
+}
+
+.card-details.active {
+  display: block;
+}
+
+.card-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--accent);
+}
+
+.card-pattern {
+  font-family: monospace;
+  font-size: 14px;
+  margin-bottom: 10px;
+  color: var(--text);
+  background: rgba(255,255,255,0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.card-desc {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .card-slot {
+    width: 200px;
+    height: 333px;
+  }
+}
+
+@media (max-width: 768px) {
+  .controls {
+    flex-direction: column;
+  }
+  
+  .control-group {
+    min-width: 100%;
+  }
+  
+  .card-slot {
+    width: 180px;
+    height: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 10px;
+  }
+  
+  h1 {
+    font-size: 18px;
+  }
+  
+  .card-slot {
+    width: 160px;
+    height: 267px;
+    min-width: 160px;
+  }
+  
+  .cards-display {
+    padding: 8px;
+  }
+  
+  .cards-container {
+    gap: 10px;
+  }
+  
+  .card-slot img {
+    padding: 15px;
+  }
+}
+
+/* 在极小屏幕上允许横向滚动 */
+@media (max-width: 360px) {
+  .cards-container {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 5px;
+  }
+  
+  .card-slot {
+    width: 140px;
+    height: 233px;
+    flex-shrink: 0;
+  }
+}
+
+/* Firefox兼容性 */
+@-moz-document url-prefix() {
+  #difficultySelect, #cardType {
+    color: var(--text);
+    background-color: rgba(255,255,255,0.05);
+  }
+  
+  #difficultySelect option, #cardType option {
+    color: var(--text);
+    background-color: var(--card-bg);
+  }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1><a href="index.html" style="text-decoration: none; color: #3498db; margin-right: 10px; font-size: 20px;">⇦返回首页</a>节奏卡片练习</h1>
+  <p class="subtitle">音符及休止符时值，专注于节奏识别</p>
+</header>
+
+<div class="controls">
+  <div class="control-group">
+    <label>卡片数量</label>
+    <div class="card-count-control">
+      <input type="range" id="cardCount" min="1" max="8" value="4">
+      <div id="countDisplay">4 张</div>
+    </div>
+  </div>
+  
+  <div class="control-group">
+    <label>卡片类型</label>
+    <div class="select-wrapper">
+      <select id="cardType">
+        <option value="4">4细分卡片</option>
+        <option value="3">3细分卡片</option>
+        <option value="mix">混合卡片</option>
+      </select>
+    </div>
+  </div>
+  
+  <div class="control-group">
+    <label>难度选择</label>
+    <div class="select-wrapper">
+      <select id="difficultySelect">
+        <!-- 难度选项会根据卡片类型动态生成 -->
+      </select>
+    </div>
+  </div>
+  
+  <div class="control-group">
+    <button class="quiz-btn" id="startQuiz">出题</button>
+  </div>
+</div>
+
+<div class="cards-display">
+  <div class="cards-container" id="cardsContainer">
+    <!-- 卡片会动态插入 -->
+  </div>
+</div>
+
+<div class="card-info">
+  <div id="infoPlaceholder" class="info-placeholder">
+    点击"出题"开始，点击卡片查看详细信息
+  </div>
+  <div id="cardDetails" class="card-details">
+    <div class="card-name" id="detailName"></div>
+    <div class="card-pattern" id="detailPattern"></div>
+    <div class="card-desc" id="detailDesc"></div>
+  </div>
+</div>
+
+<script>
+// 节奏卡片数据 - 按难度分组
+const cardsByDifficulty = {
+  "4_1": [
+    { id: "41000", name: "四分", pattern: "1000", desc: "正拍四分音符" },
+    { id: "40000", name: "四分休止", pattern: "0000", desc: "全部无声" }
+  ],
+  "4_2": [
+    { id: "41000", name: "四分", pattern: "1000", desc: "正拍四分音符" },
+    { id: "40000", name: "四分休止", pattern: "0000", desc: "全部无声" },
+    { id: "41030", name: "八分", pattern: "1030", desc: "第一、三位置" },
+    { id: "40030", name: "第三位置", pattern: "0030", desc: "第三位置八分音符" }
+  ],
+  "4_3": [
+    { id: "41000", name: "四分", pattern: "1000", desc: "正拍四分音符" },
+    { id: "40000", name: "四分休止", pattern: "0000", desc: "全部无声" },
+    { id: "41030", name: "八分", pattern: "1030", desc: "第一、三位置" },
+    { id: "40030", name: "第三位置", pattern: "0030", desc: "第三位置八分音符" },
+    { id: "41034", name: "前八后十六", pattern: "1034", desc: "第一、三、四位置" },
+    { id: "41230", name: "前十六后八", pattern: "1230", desc: "第一、二、三位置" }
+  ],
+  "4_4": [
+    { id: "41000", name: "四分", pattern: "1000", desc: "正拍四分音符" },
+    { id: "40000", name: "四分休止", pattern: "0000", desc: "全部无声" },
+    { id: "41030", name: "八分", pattern: "1030", desc: "第一、三位置" },
+    { id: "40030", name: "第三位置", pattern: "0030", desc: "第三位置八分音符" },
+    { id: "41034", name: "前八后十六", pattern: "1034", desc: "第一、三、四位置" },
+    { id: "41230", name: "前十六后八", pattern: "1230", desc: "第一、二、三位置" },
+    { id: "41204", name: "小切分", pattern: "1204", desc: "第一、二、四位置" }
+  ],
+  "4_5": [
+    { id: "41000", name: "四分", pattern: "1000", desc: "正拍四分音符" },
+    { id: "40000", name: "四分休止", pattern: "0000", desc: "全部无声" },
+    { id: "41030", name: "八分", pattern: "1030", desc: "第一、三位置" },
+    { id: "40030", name: "第三位置", pattern: "0030", desc: "第三位置八分音符" },
+    { id: "41034", name: "前八后十六", pattern: "1034", desc: "第一、三、四位置" },
+    { id: "41230", name: "前十六后八", pattern: "1230", desc: "第一、二、三位置" },
+    { id: "41204", name: "小切分", pattern: "1204", desc: "第一、二、四位置" },
+    { id: "41234", name: "十六分", pattern: "1234", desc: "所有四个位置" }
+  ],
+  "4_6": [
+    { id: "41000", name: "四分", pattern: "1000", desc: "正拍四分音符" },
+    { id: "40000", name: "四分休止", pattern: "0000", desc: "全部无声" },
+    { id: "41030", name: "八分", pattern: "1030", desc: "第一、三位置" },
+    { id: "40030", name: "第三位置", pattern: "0030", desc: "第三位置八分音符" },
+    { id: "41034", name: "前八后十六", pattern: "1034", desc: "第一、三、四位置" },
+    { id: "41230", name: "前十六后八", pattern: "1230", desc: "第一、二、三位置" },
+    { id: "41204", name: "小切分", pattern: "1204", desc: "第一、二、四位置" },
+    { id: "41234", name: "十六分", pattern: "1234", desc: "所有四个位置" },
+    { id: "41004", name: "前附点", pattern: "1004", desc: "第一、四位置" },
+    { id: "41200", name: "后附点", pattern: "1200", desc: "第一、二位置" }
+  ],
+  "4_7": [
+    { id: "41000", name: "四分", pattern: "1000", desc: "正拍四分音符" },
+    { id: "40000", name: "四分休止", pattern: "0000", desc: "全部无声" },
+    { id: "41030", name: "八分", pattern: "1030", desc: "第一、三位置" },
+    { id: "40030", name: "第三位置", pattern: "0030", desc: "第三位置八分音符" },
+    { id: "41034", name: "前八后十六", pattern: "1034", desc: "第一、三、四位置" },
+    { id: "41230", name: "前十六后八", pattern: "1230", desc: "第一、二、三位置" },
+    { id: "41204", name: "小切分", pattern: "1204", desc: "第一、二、四位置" },
+    { id: "41234", name: "十六分", pattern: "1234", desc: "所有四个位置" },
+    { id: "41004", name: "前附点", pattern: "1004", desc: "第一、四位置" },
+    { id: "41200", name: "后附点", pattern: "1200", desc: "第一、二位置" },
+    { id: "40200", name: "第二位置", pattern: "0200", desc: "第二位置八分音符" },
+    { id: "40004", name: "第四位置", pattern: "0004", desc: "第四位置八分音符" }
+  ],
+  "4_8": [
+    { id: "41000", name: "四分", pattern: "1000", desc: "正拍四分音符" },
+    { id: "40200", name: "第二位置", pattern: "0200", desc: "第二位置八分音符" },
+    { id: "40030", name: "第三位置", pattern: "0030", desc: "第三位置八分音符" },
+    { id: "40004", name: "第四位置", pattern: "0004", desc: "第四位置八分音符" },
+    { id: "41200", name: "后附点", pattern: "1200", desc: "第一、二位置" },
+    { id: "41030", name: "八分", pattern: "1030", desc: "第一、三位置" },
+    { id: "41230", name: "前十六后八", pattern: "1230", desc: "第一、二、三位置" },
+    { id: "41034", name: "前八后十六", pattern: "1034", desc: "第一、三、四位置" },
+    { id: "40234", name: "后三位置", pattern: "0234", desc: "第二、三、四位置" },
+    { id: "41234", name: "十六分", pattern: "1234", desc: "所有四个位置" },
+    { id: "40230", name: "二三位置", pattern: "0230", desc: "第二、三位置" },
+    { id: "41004", name: "前附点", pattern: "1004", desc: "第一、四位置" },
+    { id: "40204", name: "16反拍", pattern: "0204", desc: "第二、四位置" },
+    { id: "40034", name: "后16分", pattern: "0034", desc: "第三、四位置" },
+    { id: "40000", name: "四分休止", pattern: "0000", desc: "全部无声" },
+    { id: "41204", name: "小切分", pattern: "1204", desc: "第一、二、四位置" }
+  ],
+  
+  "3_1": [
+    { id: "3100", name: "四分", pattern: "100", desc: "正拍四分音符（3细分）" },
+    { id: "3000", name: "四分休止", pattern: "000", desc: "完全休止（3细分）" }
+  ],
+  "3_2": [
+    { id: "3100", name: "四分", pattern: "100", desc: "正拍四分音符（3细分）" },
+    { id: "3000", name: "四分休止", pattern: "000", desc: "完全休止（3细分）" },
+    { id: "3123", name: "三连音", pattern: "123", desc: "完整三连音" }
+  ],
+  "3_3": [
+    { id: "3100", name: "四分", pattern: "100", desc: "正拍四分音符（3细分）" },
+    { id: "3000", name: "四分休止", pattern: "000", desc: "完全休止（3细分）" },
+    { id: "3123", name: "三连音", pattern: "123", desc: "完整三连音" },
+    { id: "3103", name: "Swing节奏", pattern: "103", desc: "Swing节奏型" }
+  ],
+  "3_4": [
+    { id: "3100", name: "四分", pattern: "100", desc: "正拍四分音符（3细分）" },
+    { id: "3020", name: "第二位置", pattern: "020", desc: "第二位置（3细分）" },
+    { id: "3003", name: "第三位置", pattern: "003", desc: "第三位置（3细分）" },
+    { id: "3120", name: "前两个", pattern: "120", desc: "前两个位置" },
+    { id: "3023", name: "后两个", pattern: "023", desc: "后两个位置" },
+    { id: "3103", name: "Swing节奏", pattern: "103", desc: "Swing节奏型" },
+    { id: "3123", name: "三连音", pattern: "123", desc: "完整三连音" },
+    { id: "3000", name: "空拍", pattern: "000", desc: "全部无声（3细分）" }
+  ],
+  
+  // 混合卡片 - 包含全部卡片（24张）
+  "mix_1": [
+    // 4细分全部卡片（16张）
+    { id: "41000", name: "四分", pattern: "1000", desc: "正拍四分音符" },
+    { id: "40200", name: "第二位置", pattern: "0200", desc: "第二位置八分音符" },
+    { id: "40030", name: "第三位置", pattern: "0030", desc: "第三位置八分音符" },
+    { id: "40004", name: "第四位置", pattern: "0004", desc: "第四位置八分音符" },
+    { id: "41200", name: "后附点", pattern: "1200", desc: "第一、二位置" },
+    { id: "41030", name: "八分", pattern: "1030", desc: "第一、三位置" },
+    { id: "41230", name: "前十六后八", pattern: "1230", desc: "第一、二、三位置" },
+    { id: "41034", name: "前八后十六", pattern: "1034", desc: "第一、三、四位置" },
+    { id: "40234", name: "后三位置", pattern: "0234", desc: "第二、三、四位置" },
+    { id: "41234", name: "十六分", pattern: "1234", desc: "所有四个位置" },
+    { id: "40230", name: "二三位置", pattern: "0230", desc: "第二、三位置" },
+    { id: "41004", name: "前附点", pattern: "1004", desc: "第一、四位置" },
+    { id: "40204", name: "16反拍", pattern: "0204", desc: "第二、四位置" },
+    { id: "40034", name: "后16分", pattern: "0034", desc: "第三、四位置" },
+    { id: "40000", name: "四分休止", pattern: "0000", desc: "全部无声" },
+    { id: "41204", name: "小切分", pattern: "1204", desc: "第一、二、四位置" },
+    
+    // 3细分全部卡片（8张）
+    { id: "3100", name: "四分", pattern: "100", desc: "正拍四分音符（3细分）" },
+    { id: "3020", name: "第二位置", pattern: "020", desc: "第二位置（3细分）" },
+    { id: "3003", name: "第三位置", pattern: "003", desc: "第三位置（3细分）" },
+    { id: "3120", name: "前两个", pattern: "120", desc: "前两个位置" },
+    { id: "3023", name: "后两个", pattern: "023", desc: "后两个位置" },
+    { id: "3103", name: "Swing节奏", pattern: "103", desc: "Swing节奏型" },
+    { id: "3123", name: "三连音", pattern: "123", desc: "完整三连音" },
+    { id: "3000", name: "空拍", pattern: "000", desc: "全部无声（3细分）" }
+  ]
+};
+
+// 难度描述
+const difficultyDescriptions = {
+  "4": [
+    { level: 1, name: "四分音符及休止符" },
+    { level: 2, name: "八分音符及后八" },
+    { level: 3, name: "前八后十六及前十六后八" },
+    { level: 4, name: "小切分" },
+    { level: 5, name: "十六分音符" },
+    { level: 6, name: "前/后附点音符" },
+    { level: 7, name: "更多点位" },
+    { level: 8, name: "全部点位" }
+  ],
+  "3": [
+    { level: 1, name: "四分音符及休止" },
+    { level: 2, name: "三连音" },
+    { level: 3, name: "Swing摇摆起来" },
+    { level: 4, name: "全部点位" }
+  ],
+  "mix": [
+    { level: 1, name: "🚀 我全会了 · 终极挑战" }
+  ]
+};
+
+// 当前状态
+let state = {
+  currentType: '4',
+  currentDifficulty: 1,
+  currentCards: [],
+  selectedCard: null
+};
+
+// DOM元素
+const cardCount = document.getElementById('cardCount');
+const countDisplay = document.getElementById('countDisplay');
+const cardType = document.getElementById('cardType');
+const difficultySelect = document.getElementById('difficultySelect');
+const startQuizBtn = document.getElementById('startQuiz');
+const cardsContainer = document.getElementById('cardsContainer');
+const infoPlaceholder = document.getElementById('infoPlaceholder');
+const cardDetails = document.getElementById('cardDetails');
+const detailName = document.getElementById('detailName');
+const detailPattern = document.getElementById('detailPattern');
+const detailDesc = document.getElementById('detailDesc');
+
+// 更新难度选择框
+function updateDifficultyOptions() {
+  difficultySelect.innerHTML = '';
+  
+  const difficulties = difficultyDescriptions[state.currentType];
+  
+  difficulties.forEach(diff => {
+    const option = document.createElement('option');
+    option.value = diff.level;
+    option.textContent = `难度${diff.level}: ${diff.name}`;
+    
+    // 为混合模式的"我全会了"添加特殊样式
+    if (state.currentType === 'mix') {
+      option.classList.add('mix-ultimate');
+    }
+    
+    if (diff.level === state.currentDifficulty) {
+      option.selected = true;
+    }
+    difficultySelect.appendChild(option);
+  });
+}
+
+// 创建卡片 - 简洁版（无文字显示）
+function createCard(card, index) {
+  const slot = document.createElement('div');
+  slot.className = 'card-slot';
+  slot.dataset.index = index;
+  
+  // 创建图片元素
+  const img = document.createElement('img');
+  img.src = `${card.id}.svg`;
+  img.alt = card.id;
+  img.onerror = function() {
+    // SVG加载失败时，显示纯色背景和卡片ID
+    this.style.display = 'none';
+    const fallback = document.createElement('div');
+    fallback.className = 'card-fallback';
+    fallback.textContent = card.id;
+    fallback.style.display = 'flex';
+    slot.appendChild(fallback);
+  };
+  
+  slot.appendChild(img);
+  slot.addEventListener('click', () => showCardDetails(index));
+  return slot;
+}
+
+// 更新卡片显示
+function updateCardsDisplay() {
+  const count = parseInt(cardCount.value);
+  countDisplay.textContent = `${count} 张`;
+  
+  // 清空现有卡片
+  cardsContainer.innerHTML = '';
+  
+  // 根据类型和难度选择卡片池
+  const key = `${state.currentType}_${state.currentDifficulty}`;
+  const pool = cardsByDifficulty[key] || [];
+  
+  if (pool.length === 0) {
+    cardsContainer.innerHTML = '<div style="color:var(--muted); text-align:center; padding:40px;">暂无卡片数据</div>';
+    state.currentCards = [];
+    return;
+  }
+  
+  // 清空当前卡片数组
+  state.currentCards = [];
+  
+  // 随机选择指定数量的卡片（允许重复）
+  for (let i = 0; i < count; i++) {
+    const randomIndex = Math.floor(Math.random() * pool.length);
+    const card = pool[randomIndex];
+    state.currentCards.push(card);
+  }
+  
+  // 创建并添加卡片
+  state.currentCards.forEach((card, index) => {
+    const cardElement = createCard(card, index);
+    cardsContainer.appendChild(cardElement);
+  });
+  
+  // 清空详情显示
+  infoPlaceholder.style.display = 'block';
+  cardDetails.classList.remove('active');
+  state.selectedCard = null;
+}
+
+// 显示卡片详情
+function showCardDetails(index) {
+  if (index < 0 || index >= state.currentCards.length) return;
+  
+  const card = state.currentCards[index];
+  state.selectedCard = card;
+  
+  detailName.textContent = card.name;
+  detailPattern.textContent = `节奏型: ${card.pattern}`;
+  detailDesc.textContent = card.desc;
+  
+  infoPlaceholder.style.display = 'none';
+  cardDetails.classList.add('active');
+}
+
+// 出题函数
+function generateQuiz() {
+  // 更新当前类型和难度
+  state.currentType = cardType.value;
+  state.currentDifficulty = parseInt(difficultySelect.value);
+  
+  updateCardsDisplay();
+  
+  infoPlaceholder.style.display = 'block';
+  cardDetails.classList.remove('active');
+  state.selectedCard = null;
+}
+
+// 初始化：页面加载时自动出题
+function init() {
+  updateDifficultyOptions();
+  generateQuiz(); // 页面加载时自动出题一次
+}
+
+// 事件监听
+cardCount.addEventListener('input', () => {
+  countDisplay.textContent = `${cardCount.value} 张`;
+});
+
+cardType.addEventListener('change', () => {
+  state.currentType = cardType.value;
+  state.currentDifficulty = 1;
+  updateDifficultyOptions();
+});
+
+difficultySelect.addEventListener('change', () => {
+  state.currentDifficulty = parseInt(difficultySelect.value);
+});
+
+startQuizBtn.addEventListener('click', generateQuiz);
+
+// 键盘快捷键
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    generateQuiz();
+  }
+});
+
+// 强制设置下拉菜单文字颜色（解决某些浏览器兼容性问题）
+function fixSelectColors() {
+  const selects = document.querySelectorAll('select');
+  selects.forEach(select => {
+    // 主选择框
+    select.style.color = getComputedStyle(document.documentElement)
+      .getPropertyValue('--text').trim();
+    
+    // 为所有选项设置样式
+    Array.from(select.options).forEach(option => {
+      option.style.color = getComputedStyle(document.documentElement)
+        .getPropertyValue('--text').trim();
+      option.style.backgroundColor = getComputedStyle(document.documentElement)
+        .getPropertyValue('--card-bg').trim();
+    });
+  });
+}
+
+// 页面加载时初始化
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  setTimeout(fixSelectColors, 100); // 延迟修复颜色
+});
+</script>
+</body>
+</html>
