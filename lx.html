@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鼓手练习中心 | 专业节奏训练</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 顶部导航栏 */
+        header {
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* 一级导航 */
+        .primary-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 24px;
+            font-weight: 700;
+            color: #222;
+            text-decoration: none;
+        }
+        
+        .logo i {
+            color: #d32f2f;
+        }
+        
+        /* 品牌文字样式 */
+        .brand {
+            font-size: 18px;
+            color: #ff6600;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        
+        .brand-chinese {
+            font-size: 14px;
+            color: #ff6600;
+        }
+        
+        /* 一级导航菜单 */
+        .primary-nav-list {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+        }
+        
+        .primary-nav-item {
+            position: relative;
+        }
+        
+        .primary-nav-link {
+            text-decoration: none;
+            color: #444;
+            font-weight: 600;
+            font-size: 16px;
+            padding: 8px 0;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .primary-nav-link:hover {
+            color: #d32f2f;
+        }
+        
+        .primary-nav-link.active {
+            color: #d32f2f;
+            border-bottom: 2px solid #d32f2f;
+        }
+        
+        /* 二级导航菜单 */
+        .secondary-nav {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: #fff;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            min-width: 200px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .primary-nav-item:hover .secondary-nav {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .secondary-nav-list {
+            list-style: none;
+            padding: 10px 0;
+        }
+        
+        .secondary-nav-item {
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .secondary-nav-item:last-child {
+            border-bottom: none;
+        }
+        
+        .secondary-nav-link {
+            display: block;
+            padding: 12px 20px;
+            text-decoration: none;
+            color: #555;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .secondary-nav-link:hover {
+            background-color: #f9f9f9;
+            color: #d32f2f;
+            padding-left: 25px;
+        }
+        
+        /* 主内容区域 */
+        main {
+            flex: 1;
+            padding: 40px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .hero {
+            text-align: center;
+            padding: 60px 20px;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 50px;
+        }
+        
+        .hero h1 {
+            font-size: 42px;
+            color: #222;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+        
+        .hero p {
+            font-size: 18px;
+            color: #666;
+            max-width: 700px;
+            margin: 0 auto 30px;
+        }
+        
+        .hero-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 14px 28px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background-color: #d32f2f;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #b71c1c;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(211, 47, 47, 0.2);
+        }
+        
+        .btn-secondary {
+            background-color: #fff;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #f5f5f5;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* 特色部分 */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 60px;
+        }
+        
+        .feature-card {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s;
+            text-align: center;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .feature-icon {
+            font-size: 36px;
+            color: #d32f2f;
+            margin-bottom: 20px;
+        }
+        
+        .feature-card h3 {
+            font-size: 22px;
+            margin-bottom: 15px;
+            color: #222;
+        }
+        
+        .feature-card p {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        
+        .feature-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #d32f2f;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 8px 16px;
+            border: 1px solid #d32f2f;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        
+        .feature-link:hover {
+            background-color: #d32f2f;
+            color: white;
+        }
+        
+        /* 页脚 */
+        footer {
+            background-color: #222;
+            color: #ddd;
+            padding: 40px 20px;
+            margin-top: 60px;
+        }
+        
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 40px;
+        }
+        
+        .footer-section h3 {
+            color: #fff;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        
+        .footer-links {
+            list-style: none;
+        }
+        
+        .footer-links li {
+            margin-bottom: 10px;
+        }
+        
+        .footer-links a {
+            color: #aaa;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-links a:hover {
+            color: #fff;
+        }
+        
+        .copyright {
+            text-align: center;
+            padding-top: 30px;
+            margin-top: 30px;
+            border-top: 1px solid #444;
+            color: #888;
+            font-size: 14px;
+        }
+        
+        /* 移动设备适配 */
+        @media (max-width: 768px) {
+            .primary-nav {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .primary-nav-list {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 15px;
+            }
+            
+            .hero h1 {
+                font-size: 32px;
+            }
+            
+            .hero p {
+                font-size: 16px;
+            }
+            
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+            
+            .footer-content {
+                flex-direction: column;
+                gap: 30px;
+            }
+            
+            .feature-card {
+                padding: 20px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .primary-nav-list {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+            }
+            
+            .hero {
+                padding: 40px 15px;
+            }
+            
+            .hero h1 {
+                font-size: 28px;
+            }
+            
+            .logo {
+                font-size: 20px;
+            }
+            
+            .brand {
+                font-size: 16px;
+            }
+            
+            .brand-chinese {
+                font-size: 12px;
+            }
+        }
+        
+        /* 汉堡菜单（移动端） */
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #333;
+            cursor: pointer;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: block;
+                position: absolute;
+                top: 20px;
+                right: 20px;
+            }
+            
+            .primary-nav {
+                flex-direction: row;
+            }
+            
+            .primary-nav-list {
+                display: none;
+                width: 100%;
+                flex-direction: column;
+                background-color: #fff;
+                position: absolute;
+                top: 70px;
+                left: 0;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+                padding: 20px;
+                z-index: 100;
+            }
+            
+            .primary-nav-list.active {
+                display: flex;
+            }
+            
+            .primary-nav-item {
+                width: 100%;
+            }
+            
+            .secondary-nav {
+                position: static;
+                opacity: 1;
+                visibility: visible;
+                transform: none;
+                box-shadow: none;
+                display: none;
+                margin-left: 20px;
+            }
+            
+            .primary-nav-item.active .secondary-nav {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <header>
+        <div class="nav-container">
+            <nav class="primary-nav">
+                <a href="index.html" class="logo">
+                    <i class="fas fa-drum"></i>
+                    <span>鼓手练习中心</span>
+                    <span class="brand">NICEFUN</span>
+                    <span class="brand-chinese">酷玩音乐</span>
+                </a>
+                
+                <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                
+                <ul class="primary-nav-list" id="primaryNavList">
+                    <li class="primary-nav-item">
+                        <a href="index.html" class="primary-nav-link active">
+                            <i class="fas fa-home"></i>
+                            首页
+                        </a>
+                    </li>
+                    
+                    <li class="primary-nav-item">
+                        <a href="#" class="primary-nav-link">
+                            <i class="fas fa-drumstick-bite"></i>
+                            基础练习
+                        </a>
+                        <div class="secondary-nav">
+                            <ul class="secondary-nav-list">
+                                <li class="secondary-nav-item">
+                                    <a href="single.html" class="secondary-nav-link">单击练习</a>
+                                </li>
+                                <li class="secondary-nav-item">
+                                    <a href="double.html" class="secondary-nav-link">双击练习</a>
+                                </li>
+                                <li class="secondary-nav-item">
+                                    <a href="paradiddle.html" class="secondary-nav-link">复合跳练习</a>
+                                </li>
+                                <li class="secondary-nav-item">
+                                    <a href="coordination.html" class="secondary-nav-link">手脚协调</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                    
+                    <li class="primary-nav-item">
+                        <a href="#" class="primary-nav-link">
+                            <i class="fas fa-music"></i>
+                            节奏训练
+                        </a>
+                        <div class="secondary-nav">
+                            <ul class="secondary-nav-list">
+                                
+                                <li class="secondary-nav-item">
+                                    <a href="16.html" class="secondary-nav-link">16点位节奏练习</a>
+                                </li>
+                                <li class="secondary-nav-item">
+                                    <a href="1346.html" class="secondary-nav-link">shuffle节奏练习</a>
+                                </li>
+                                <li class="secondary-nav-item">
+                                    <a href="146.html" class="secondary-nav-link">swing节奏练习</a>
+                                </li>
+                                <li class="secondary-nav-item">
+                                    <a href="5.html" class="secondary-nav-link">5拍节奏</a>
+                                </li>
+                                <li class="secondary-nav-item">
+                                    <a href="7.html" class="secondary-nav-link">7拍节奏</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                    
+                    <li class="primary-nav-item">
+                        <a href="#" class="primary-nav-link">
+                            <i class="fas fa-tools"></i>
+                            练习工具
+                        </a>
+                        <div class="secondary-nav">
+                            <ul class="secondary-nav-list">
+                                <li class="secondary-nav-item">
+                                    <a href="m.html" class="secondary-nav-link">节拍器</a>
+                                </li>
+                                <li class="secondary-nav-item">
+                                    <a href="z.html" class="secondary-nav-link">节奏训练器</a>
+                                </li>
+                                <li class="secondary-nav-item">
+                                    <a href="3p.html" class="secondary-nav-link">节奏训练器3拍子</a>
+                                </li>
+                                 <li class="secondary-nav-item">
+                                    <a href="5p.html" class="secondary-nav-link">节奏训练器5拍子</a>
+                                </li>
+                                 <li class="secondary-nav-item">
+                                    <a href="6p.html" class="secondary-nav-link">节奏训练器6拍子</a>
+                                </li>
+                                <li class="secondary-nav-item">
+                                    <a href="7p.html" class="secondary-nav-link">节奏训练器7拍子</a>
+                                </li>
+                                
+                              </ul>
+                        </div>
+                    </li>
+                    
+                    <li class="primary-nav-item">
+                        <a href="#" class="primary-nav-link">
+                            <i class="fas fa-book"></i>
+                            资源库
+                        </a>
+                        <div class="secondary-nav">
+                            <ul class="secondary-nav-list">
+                                <li class="secondary-nav-item">
+                                    <a href="sp.html" class="secondary-nav-link">识谱教程</a>
+                                </li>
+                                <li class="secondary-nav-item">
+                                    <a href="lx.html" class="secondary-nav-link">练习曲谱</a>
+                                </li>
+                                <li class="secondary-nav-item">
+                                    <a href="sf.html" class="secondary-nav-link">四种基本手法</a>
+                                </li>
+                                <li class="secondary-nav-item">
+                                    <a href="contact.html" class="secondary-nav-link">联系我</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 主内容区域 -->
+    <main>
+        <section class="hero"> 
+<a href="wtm811F.html" class="feature-link">8分基本节奏1</a>
+<a href="wtm812F.html" class="feature-link">8分基本节奏2</a>
+<a href="wtm813F.html" class="feature-link">8分基本节奏3</a>
+<a href="wtm814F.html" class="feature-link">8分基本节奏4</a>
+<a href="wtm815F.html" class="feature-link">8分基本节奏5</a>
+<a href="wtm816F.html" class="feature-link">8分基本节奏6</a>
+<a href="wtm817F.html" class="feature-link">8分基本节奏7</a>
+<a href="wtm818F.html" class="feature-link">8分基本节奏8</a>
+            
+          
+            </div>
+        </section>
+        
+        <section class="features">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-drumstick-bite"></i>
+                </div>
+                <h3>单击练习</h3>
+                <p>单击滚奏是鼓手最基础、最重要的基本功。练习单击能提高手腕控制力、速度和耐力，是所有鼓手技巧的基石。</p>
+                <a href="single.html" class="feature-link">
+                    开始练习 <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-drum"></i>
+                </div>
+                <h3>双击练习</h3>
+                <p>双击滚奏要求每只手连续击打两次，形成更复杂的滚奏效果。对控制力和协调性要求更高，是通往专业鼓手的重要里程碑。</p>
+                <a href="double.html" class="feature-link">
+                    开始练习 <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <h3>复合跳练习</h3>
+                <p>Paradiddle复合跳由单击和双击组合而成，是鼓手必须掌握的核心技巧。包含四种基本形式，能显著提升节奏感和协调性。</p>
+                <a href="paradiddle.html" class="feature-link">
+                    开始练习 <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-sliders-h"></i>
+                </div>
+                <h3>鼓谱认识</h3>
+                <p>还不认识鼓的各个部件和音符的对应关系吗？来这里学习鼓谱。提供鼓谱位置示意，鼓部件展示，出题学习。快速学会认谱</p>
+                <a href="sp.html" class="feature-link">
+                    学习识谱 <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3>节拍器练习</h3>
+                <p>记录你的练习数据，分析进步趋势。设定个人目标，查看练习历史，保持持续的动力和进步。科学训练，高效提升。</p>
+                <a href="m.html" class="feature-link">
+                    打开节拍器 <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-music"></i>
+                </div>
+                <h3>节奏训练</h3>
+                <p>从4/4拍基础节奏到复杂的切分节奏和奇数拍节奏，系统训练你的节奏感。包含加花与填充等实用技巧训练。</p>
+                <a href="z.html" class="feature-link">
+                    开始训练 <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>鼓手练习中心</h3>
+                <p>专业的在线鼓手练习平台<br>致力于帮助鼓手提升技能</p>
+                <p style="margin-top: 10px; font-size: 14px; color: #bbb;">
+                    <span style="font-size: 16px; color: #ff6600; font-weight: bold;">NICEFUN</span>
+                    <span style="font-size: 12px; color: #ff6600;">酷玩音乐</span>
+                </p>
+            </div>
+            
+            <div class="footer-section">
+                <h3>基础练习</h3>
+                <ul class="footer-links">
+                    <li><a href="single.html">单击练习</a></li>
+                    <li><a href="double.html">双击练习</a></li>
+                    <li><a href="paradiddle.html">复合跳练习</a></li>
+                    <li><a href="coordination.html">手脚协调</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h3>快速链接</h3>
+                <ul class="footer-links">
+                    <li><a href="index.html">首页</a></li>
+                    <li><a href="z.html">节奏训练</a></li>
+                    <li><a href="m.html">节拍器</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h3>联系我们</h3>
+                <ul class="footer-links">
+                    <li><a href="help.html">帮助中心</a></li>
+                    <li><a href="contact.html">关于</a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="copyright">
+            <p>&copy; 2023 鼓手练习中心 | <span style="color: #ff6600;">NICEFUN酷玩音乐</span> 提供技术支持</p>
+            <p style="margin-top: 5px; font-size: 12px;">访问地址: sinr266.github.io</p>
+        </div>
+    </footer>
+
+    <script>
+        // 移动端菜单切换
+        document.getElementById('mobileMenuToggle').addEventListener('click', function() {
+            const navList = document.getElementById('primaryNavList');
+            navList.classList.toggle('active');
+            
+            // 切换图标
+            const icon = this.querySelector('i');
+            if (icon.classList.contains('fa-bars')) {
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-times');
+            } else {
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+            }
+        });
+        
+        // 移动端二级菜单切换
+        const primaryNavItems = document.querySelectorAll('.primary-nav-item');
+        
+        primaryNavItems.forEach(item => {
+            if (window.innerWidth <= 768) {
+                const primaryLink = item.querySelector('.primary-nav-link');
+                
+                primaryLink.addEventListener('click', function(e) {
+                    // 如果是移动设备且不是首页链接
+                    if (window.innerWidth <= 768 && !this.classList.contains('active') && !this.parentElement.classList.contains('active')) {
+                        e.preventDefault();
+                        
+                        // 关闭其他二级菜单
+                        primaryNavItems.forEach(otherItem => {
+                            if (otherItem !== item) {
+                                otherItem.classList.remove('active');
+                            }
+                        });
+                        
+                        // 切换当前二级菜单
+                        item.classList.toggle('active');
+                    }
+                });
+            }
+        });
+        
+        // 点击页面其他地方关闭菜单
+        document.addEventListener('click', function(e) {
+            if (window.innerWidth <= 768) {
+                const navList = document.getElementById('primaryNavList');
+                const toggleBtn = document.getElementById('mobileMenuToggle');
+                
+                // 如果点击的不是导航菜单或切换按钮
+                if (!navList.contains(e.target) && !toggleBtn.contains(e.target)) {
+                    navList.classList.remove('active');
+                    const icon = toggleBtn.querySelector('i');
+                    if (icon.classList.contains('fa-times')) {
+                        icon.classList.remove('fa-times');
+                        icon.classList.add('fa-bars');
+                    }
+                    
+                    // 关闭所有二级菜单
+                    primaryNavItems.forEach(item => {
+                        item.classList.remove('active');
+                    });
+                }
+            }
+        });
+        
+        // 窗口大小改变时调整菜单
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 768) {
+                const navList = document.getElementById('primaryNavList');
+                navList.classList.remove('active');
+                
+                // 重置图标
+                const icon = document.querySelector('.mobile-menu-toggle i');
+                if (icon.classList.contains('fa-times')) {
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                }
+                
+                // 重置二级菜单
+                primaryNavItems.forEach(item => {
+                    item.classList.remove('active');
+                });
+            }
+        });
+        
+        // 当前页面高亮显示
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+            const navLinks = document.querySelectorAll('.primary-nav-link');
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                const href = link.getAttribute('href');
+                
+                if (href === currentPage || (currentPage === '' && href === 'index.html')) {
+                    link.classList.add('active');
+                    
+                    // 如果是二级菜单的父项，也高亮显示
+                    const parentItem = link.closest('.primary-nav-item');
+                    if (parentItem && href !== 'index.html') {
+                        const homeLink = document.querySelector('a[href="index.html"]');
+                        if (homeLink) {
+                            homeLink.classList.remove('active');
+                        }
+                    }
+                }
+            });
+            
+            // 页面加载动画
+            const featureCards = document.querySelectorAll('.feature-card');
+            featureCards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 100 * index);
+            });
+        });
+    </script>
+</body>
+
+</html>
+
+
