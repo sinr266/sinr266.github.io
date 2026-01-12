@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鼓谱认识</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+            user-select: none; /* 全局禁止选择 */
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .header p {
+            color: #7f8c8d;
+            margin: 5px 0 0 0;
+            font-size: 12px;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            width: 100%;
+            flex: 1;
+        }
+        
+        /* 新增统计显示区域样式 */
+        .stats-container {
+            background-color: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border: 1px solid #ddd;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 10px;
+        }
+        
+        .stats-item {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .stats-label {
+            display: block;
+            font-size: 11px;
+            color: #7f8c8d;
+            margin-bottom: 4px;
+        }
+        
+        .stats-value {
+            display: block;
+            font-size: 18px;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .stats-value.correct {
+            color: #2ecc71;
+        }
+        
+        .stats-value.wrong {
+            color: #e74c3c;
+        }
+        
+        .stats-value.accuracy {
+            color: #9b59b6;
+        }
+        
+        .staff-container {
+            background-color: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border: 1px solid #ddd;
+            width: 100%;
+            max-width: 280px;
+        }
+        
+        .staff-title {
+            text-align: center;
+            color: #3498db;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .drum-staff {
+            width: 100%;
+            max-width: 200px;
+            height: 160px;
+            background-color: white;
+            position: relative;
+            margin: 0 auto;
+        }
+        
+        /* 间 - 保留长方形，保持原样 */
+        .space {
+            height: 25px;
+            background-color: #ffffff;
+            position: relative;
+        }
+        
+        /* 线 - 只用细线表示，保持原样 */
+        .line {
+            height: 2px;
+            background-color: #2c3e50;
+            position: relative;
+        }
+        
+        /* 上加一线（六线）- 保持原样 */
+        .first-line {
+            height: 2px;
+            background-color: #95a5a6;
+            position: relative;
+            margin: 0 47%;
+        }
+        
+        /* 圆点样式 - 保持原样 */
+        .note-dot {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background-color: #e74c3c;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            display: none;
+        }
+        
+        /* X标记样式 - 保持原样 */
+        .note-x {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            display: none;
+        }
+        
+        .note-x::before,
+        .note-x::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 3px;
+            background-color: #3498db;
+            top: 50%;
+            left: 0;
+        }
+        
+        .note-x::before {
+            transform: translateY(-50%) rotate(45deg);
+        }
+        
+        .note-x::after {
+            transform: translateY(-50%) rotate(-45deg);
+        }
+        
+        /* 矩阵容器 */
+        .matrix-container {
+            background-color: white;
+            padding: 2px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border: 1px solid #ddd;
+            width: 100%;
+        }
+        
+        .matrix-title {
+            text-align: center;
+            color: #3498db;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        /* 严格的4x4布局 - 空白单元格使用几乎看不见的颜色 */
+        .drum-matrix {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 6px;
+        }
+        
+        .matrix-cell {
+            height: 55px;
+            background-color: #f0f8ff;
+            border: 2px solid #3498db;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 5px;
+        }
+        
+        .matrix-cell:hover {
+            background-color: #e3f2fd;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.2);
+        }
+        
+        .matrix-cell.active {
+            background-color: #3498db;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(52, 152, 219, 0.3);
+        }
+        
+        .matrix-cell.correct {
+            background-color: #2ecc71;
+            border-color: #27ae60;
+            color: white;
+        }
+        
+        .matrix-cell.wrong {
+            background-color: #e74c3c;
+            border-color: #c0392b;
+            color: white;
+        }
+        
+        /* 空白单元格 - 使用几乎看不见的颜色但保持占位 */
+        .matrix-cell.empty {
+            background-color: #fafafa;
+            border-color: #f5f5f5;
+            cursor: default;
+        }
+        
+        .matrix-cell.empty:hover {
+            background-color: #fafafa;
+            transform: none;
+            box-shadow: none;
+            border-color: #f5f5f5;
+        }
+        
+        .matrix-cell.empty .drum-name,
+        .matrix-cell.empty .drum-name-en {
+            color: #f5f5f5; /* 几乎看不见的颜色 */
+        }
+        
+        /* 放大中文名称 */
+        .drum-name {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 2px;
+            text-align: center;
+            color: #2c3e50;
+        }
+        
+        .drum-name-en {
+            font-size: 10px;
+            color: #666;
+            text-align: center;
+            opacity: 0.8;
+        }
+        
+        .matrix-cell.active .drum-name,
+        .matrix-cell.active .drum-name-en,
+        .matrix-cell.correct .drum-name,
+        .matrix-cell.correct .drum-name-en,
+        .matrix-cell.wrong .drum-name,
+        .matrix-cell.wrong .drum-name-en {
+            color: white;
+        }
+        
+        /* 精简的出题栏 - 放到最下面 */
+        .quiz-controls {
+            background-color: white;
+            padding: 0px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border: 1px solid #ddd;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .quiz-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0px;
+        }
+        
+        .quiz-buttons {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+        
+        .quiz-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 0px 0px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            flex: 1;
+        }
+        
+        .quiz-button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+        
+        .quiz-button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .end-button {
+            background-color: #e74c3c;
+        }
+        
+        .end-button:hover {
+            background-color: #c0392b;
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+        }
+        
+        .result-feedback {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 10px;
+            background-color: #f8fafc;
+            border-radius: 6px;
+            border: 1px solid #e0e6ed;
+        }
+        
+        .result-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .result-correct {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .result-wrong {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .result-waiting {
+            background-color: #f39c12;
+            color: white;
+        }
+        
+        .result-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            text-align: center;
+            flex: 1;
+        }
+        
+        .result-text.correct {
+            color: #27ae60;
+        }
+        
+        .result-text.wrong {
+            color: #c0392b;
+        }
+        
+        .footer {
+            margin-top: 15px;
+            color: #7f8c8d;
+            font-size: 11px;
+            text-align: center;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>
+            <a href="index.html" style="text-decoration: none; color: #3498db; margin-right: 10px; font-size: 20px;">⇦回到首页</a>
+            识谱教程
+        </h1>
+        <p>点击鼓部件查看其在五线谱上的位置并听到相应音色</p>
+    </div>
+    
+    <div class="main-content">
+        <!-- 新增统计显示区域 -->
+        <div class="stats-container">
+            <div class="stats-item">
+                <span class="stats-label">已答题数</span>
+                <span class="stats-value" id="stats-total">0</span>
+            </div>
+            <div class="stats-item">
+                <span class="stats-label">答对</span>
+                <span class="stats-value correct" id="stats-correct">0</span>
+            </div>
+            <div class="stats-item">
+                <span class="stats-label">正确率</span>
+                <span class="stats-value accuracy" id="stats-accuracy">0%</span>
+            </div>
+<button class="quiz-button" id="quiz-button">出题</button>
+                    <button class="quiz-button end-button" id="end-button" disabled>结束</button>
+
+        </div>
+        
+        <div class="staff-container">
+            <div class="staff-title"></div>
+            <div class="drum-staff">
+                <!-- 线间结构 -->
+                <div class="first-line">
+                    <div class="note-x" id="crash-note"></div>
+                </div>
+                <div class="space">
+                    <div class="note-x" id="hihat-note"></div>
+                </div>
+                <div class="line">
+                    <div class="note-x" id="ride-note"></div>
+                </div>
+                <div class="space">
+                    <div class="note-dot" id="hitem-note"></div>
+                </div>
+                <div class="line">
+                    <div class="note-dot" id="midtom-note"></div>
+                </div>
+                <div class="space">
+                    <div class="note-dot" id="snare-note"></div>
+                </div>
+                <div class="line"></div>
+                <div class="space">
+                    <div class="note-dot" id="floortom-note"></div>
+                </div>
+                <div class="line"></div>
+                <div class="space">
+                    <div class="note-dot" id="kick-note"></div>
+                </div>
+                <div class="line">
+                    <div class="note-x" id="hihatpedal-note"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="matrix-container">
+            <div class="drum-matrix">
+                <!-- 第一行 -->
+                <div class="matrix-cell empty">
+                    <div class="drum-name">空白</div>
+                    <div class="drum-name-en">Empty</div>
+                </div>
+                <div class="matrix-cell" data-note="crash1">
+                    <div class="drum-name">吊镲1</div>
+                    <div class="drum-name-en">Crash 1</div>
+                </div>
+                <div class="matrix-cell empty">
+                    <div class="drum-name">空白</div>
+                    <div class="drum-name-en">Empty</div>
+                </div>
+                <div class="matrix-cell" data-note="crash2">
+                    <div class="drum-name">吊镲2</div>
+                    <div class="drum-name-en">Crash 2</div>
+                </div>
+                
+                <!-- 第二行 -->
+                <div class="matrix-cell" data-note="hihat">
+                    <div class="drum-name">踩镲</div>
+                    <div class="drum-name-en">Hi-hat</div>
+                </div>
+                <div class="matrix-cell" data-note="hitem">
+                    <div class="drum-name">高音嗵鼓</div>
+                    <div class="drum-name-en">Hi-Tom</div>
+                </div>
+                <div class="matrix-cell" data-note="midtom">
+                    <div class="drum-name">中音嗵鼓</div>
+                    <div class="drum-name-en">Mid-Tom</div>
+                </div>
+                <div class="matrix-cell" data-note="ride">
+                    <div class="drum-name">叮叮镲</div>
+                    <div class="drum-name-en">Ride</div>
+                </div>
+                
+                <!-- 第三行 -->
+                <div class="matrix-cell empty">
+                    <div class="drum-name">空白</div>
+                    <div class="drum-name-en">Empty</div>
+                </div>
+                <div class="matrix-cell" data-note="snare">
+                    <div class="drum-name">军鼓</div>
+                    <div class="drum-name-en">Snare</div>
+                </div>
+                <div class="matrix-cell empty">
+                    <div class="drum-name">空白</div>
+                    <div class="drum-name-en">Empty</div>
+                </div>
+                <div class="matrix-cell" data-note="floortom">
+                    <div class="drum-name">地嗵鼓</div>
+                    <div class="drum-name-en">Floor Tom</div>
+                </div>
+                
+                <!-- 第四行 -->
+                <div class="matrix-cell" data-note="hihatpedal">
+                    <div class="drum-name">踩镲踏板</div>
+                    <div class="drum-name-en">Hi-hat Pedal</div>
+                </div>
+                <div class="matrix-cell empty">
+                    <div class="drum-name">空白</div>
+                    <div class="drum-name-en">Empty</div>
+                </div>
+                <div class="matrix-cell" data-note="kickpedal">
+                    <div class="drum-name">底鼓踏板</div>
+                    <div class="drum-name-en">Kick Pedal</div>
+                </div>
+                <div class="matrix-cell empty">
+                    <div class="drum-name">空白</div>
+                    <div class="drum-name-en">Empty</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 精简的出题栏 - 放到最下面 -->
+        <div class="quiz-controls">
+            <div class="quiz-section">
+                <div class="quiz-buttons">
+ 
+                </div>
+                
+                <div class="result-feedback">
+                    <div class="result-text" id="result-text">等待出题</div>
+                    <div class="result-icon" id="result-icon">?</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== 音频系统 ==========
+        class SimpleAudio {
+            constructor() {
+                this.audioCtx = null;
+                this.master = null;
+                this.init();
+            }
+            
+            init() {
+                try {
+                    this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    this.master = this.audioCtx.createGain();
+                    this.master.connect(this.audioCtx.destination);
+                    this.master.gain.value = 0.7;
+                } catch (e) {
+                    console.warn('Web Audio API 不支持');
+                }
+            }
+            
+            ensureAudio() {
+                if (!this.audioCtx) this.init();
+            }
+            
+            // 创建白噪声节点
+            noiseNode(duration = 0.2) {
+                const len = Math.floor(this.audioCtx.sampleRate * duration);
+                const buf = this.audioCtx.createBuffer(1, len, this.audioCtx.sampleRate);
+                const d = buf.getChannelData(0);
+                for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * 0.9;
+                const src = this.audioCtx.createBufferSource();
+                src.buffer = buf;
+                return src;
+            }
+            
+            // 底鼓 - 更真实的kick
+            playKick(t = 0, amp = 1.0) {
+                this.ensureAudio();
+                const now = this.audioCtx.currentTime + t;
+                
+                // 主音 (正弦波，频率下滑)
+                const o = this.audioCtx.createOscillator();
+                o.type = "sine";
+                o.frequency.setValueAtTime(120, now);
+                o.frequency.exponentialRampToValueAtTime(55, now + 0.08);
+                
+                // 包络
+                const g = this.audioCtx.createGain();
+                g.gain.setValueAtTime(amp * 0.9, now);
+                g.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
+                
+                o.connect(g).connect(this.master);
+                o.start(now);
+                o.stop(now + 0.16);
+                
+                // 添加点击声 (高频脉冲)
+                const click = this.audioCtx.createOscillator();
+                click.type = "sine";
+                click.frequency.setValueAtTime(3000, now);
+                click.frequency.exponentialRampToValueAtTime(500, now + 0.01);
+                
+                const clickGain = this.audioCtx.createGain();
+                clickGain.gain.setValueAtTime(amp * 0.2, now);
+                clickGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.02);
+                
+                click.connect(clickGain).connect(this.master);
+                click.start(now);
+                click.stop(now + 0.03);
+            }
+            
+            // 军鼓 - 改进的snare
+            playSnare(t = 0, amp = 0.8) {
+                this.ensureAudio();
+                const now = this.audioCtx.currentTime + t;
+                
+                // 1. 白噪声部分 (高频)
+                const noise = this.noiseNode(0.2);
+                const bp = this.audioCtx.createBiquadFilter();
+                bp.type = "bandpass";
+                bp.frequency.value = 1800;
+                bp.Q.value = 0.8;
+                
+                const noiseGain = this.audioCtx.createGain();
+                noiseGain.gain.setValueAtTime(amp * 0.6, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
+                
+                noise.connect(bp).connect(noiseGain).connect(this.master);
+                noise.start(now);
+                noise.stop(now + 0.16);
+                
+                // 2. 低频鼓体 (200Hz左右的正弦波)
+                const body = this.audioCtx.createOscillator();
+                body.type = "sine";
+                body.frequency.setValueAtTime(200, now);
+                body.frequency.exponentialRampToValueAtTime(150, now + 0.05);
+                
+                const bodyGain = this.audioCtx.createGain();
+                bodyGain.gain.setValueAtTime(amp * 0.4, now);
+                bodyGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+                
+                body.connect(bodyGain).connect(this.master);
+                body.start(now);
+                body.stop(now + 0.09);
+            }
+            
+            // 踩镲 - 改进的hi-hat
+            playHiHat(t = 0, amp = 0.5, closed = true) {
+                this.ensureAudio();
+                const now = this.audioCtx.currentTime + t;
+                
+                const noise = this.noiseNode(closed ? 0.1 : 0.3);
+                const hp = this.audioCtx.createBiquadFilter();
+                hp.type = "highpass";
+                hp.frequency.value = closed ? 7000 : 6000; // 开放式频率稍低
+                hp.Q.value = 0.7;
+                
+                const g = this.audioCtx.createGain();
+                if (closed) {
+                    g.gain.setValueAtTime(amp * 0.4, now);
+                    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
+                } else {
+                    // 开放式踩镲更长
+                    g.gain.setValueAtTime(amp * 0.35, now);
+                    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+                }
+                
+                noise.connect(hp).connect(g).connect(this.master);
+                noise.start(now);
+                noise.stop(now + (closed ? 0.07 : 0.25));
+            }
+            
+            // 嗵鼓 - 新增tom音色
+            playTom(t = 0, freq = 150, amp = 0.7) {
+                this.ensureAudio();
+                const now = this.audioCtx.currentTime + t;
+                
+                const o = this.audioCtx.createOscillator();
+                o.type = "sine";
+                o.frequency.setValueAtTime(freq * 1.2, now); // 稍高开始
+                o.frequency.exponentialRampToValueAtTime(freq * 0.9, now + 0.1); // 轻微下滑
+                
+                const g = this.audioCtx.createGain();
+                g.gain.setValueAtTime(amp * 0.8, now);
+                g.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
+                
+                o.connect(g).connect(this.master);
+                o.start(now);
+                o.stop(now + 0.3);
+            }
+            
+            // 吊镲 - 新增crash音色
+            playCrash(t = 0, amp = 0.6) {
+                this.ensureAudio();
+                const now = this.audioCtx.currentTime + t;
+                
+                const noise = this.noiseNode(0.8);
+                const bp1 = this.audioCtx.createBiquadFilter();
+                bp1.type = "bandpass";
+                bp1.frequency.value = 2000;
+                bp1.Q.value = 0.6;
+                
+                const bp2 = this.audioCtx.createBiquadFilter();
+                bp2.type = "bandpass";
+                bp2.frequency.value = 6000;
+                bp2.Q.value = 0.8;
+                
+                const g = this.audioCtx.createGain();
+                g.gain.setValueAtTime(amp * 0.5, now);
+                g.gain.exponentialRampToValueAtTime(0.0001, now + 1.5); // 长衰减
+                
+                noise.connect(bp1).connect(bp2).connect(g).connect(this.master);
+                noise.start(now);
+                noise.stop(now + 0.9);
+            }
+            
+            // 叮叮镲 - 改进的ride音色
+            playRide(t = 0, amp = 0.4) {
+                this.ensureAudio();
+                const now = this.audioCtx.currentTime + t;
+                
+                // 高频部分
+                const high1 = this.audioCtx.createOscillator();
+                high1.type = "sine";
+                high1.frequency.value = 2200;
+                
+                const high2 = this.audioCtx.createOscillator();
+                high2.type = "sine";
+                high2.frequency.value = 3300;
+                
+                const highGain = this.audioCtx.createGain();
+                highGain.gain.setValueAtTime(0.001, now);
+                highGain.gain.linearRampToValueAtTime(amp * 0.25, now + 0.01);
+                highGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
+                
+                const mixer = this.audioCtx.createGain();
+                mixer.gain.value = 1.0;
+                
+                high1.connect(mixer);
+                high2.connect(mixer);
+                mixer.connect(highGain).connect(this.master);
+                
+                // 敲击噪声
+                const noise = this.noiseNode(0.1);
+                const bp = this.audioCtx.createBiquadFilter();
+                bp.type = "bandpass";
+                bp.frequency.value = 3500;
+                bp.Q.value = 3;
+                
+                const noiseGain = this.audioCtx.createGain();
+                noiseGain.gain.setValueAtTime(0.001, now);
+                noiseGain.gain.linearRampToValueAtTime(amp * 0.15, now + 0.005);
+                noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
+                
+                noise.connect(bp).connect(noiseGain).connect(this.master);
+                
+                high1.start(now);
+                high2.start(now);
+                noise.start(now);
+                
+                high1.stop(now + 0.45);
+                high2.stop(now + 0.45);
+                noise.stop(now + 0.15);
+            }
+            
+            // ========== 简单播放方法 ==========
+            
+            playDrum(drumType) {
+                switch(drumType) {
+                    case 'kick':
+                        this.playKick();
+                        break;
+                    case 'snare':
+                        this.playSnare();
+                        break;
+                    case 'hihat':
+                        this.playHiHat();
+                        break;
+                    case 'hihat-open':
+                        this.playHiHat(0, 0.5, false); // 开放式
+                        break;
+                    case 'crash':
+                        this.playCrash();
+                        break;
+                    case 'ride':
+                        this.playRide();
+                        break;
+                    case 'tom-high':
+                        this.playTom(0, 200, 0.6);
+                        break;
+                    case 'tom-mid':
+                        this.playTom(0, 150, 0.7);
+                        break;
+                    case 'tom-floor':
+                        this.playTom(0, 100, 0.8);
+                        break;
+                }
+            }
+            
+            playCorrect() {
+                this.ensureAudio();
+                const now = this.audioCtx.currentTime;
+                
+                const o1 = this.audioCtx.createOscillator();
+                const o2 = this.audioCtx.createOscillator();
+                
+                o1.frequency.value = 523.25; // C5
+                o2.frequency.value = 659.25; // E5
+                
+                const g = this.audioCtx.createGain();
+                g.gain.setValueAtTime(0.5, now);
+                g.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+                
+                const mixer = this.audioCtx.createGain();
+                mixer.gain.value = 1.0;
+                
+                o1.connect(mixer);
+                o2.connect(mixer);
+                mixer.connect(g).connect(this.master);
+                
+                o1.start(now);
+                o2.start(now);
+                o1.stop(now + 0.5);
+                o2.stop(now + 0.5);
+            }
+            
+            playWrong() {
+                this.ensureAudio();
+                const now = this.audioCtx.currentTime;
+                
+                const o = this.audioCtx.createOscillator();
+                o.type = "square";
+                o.frequency.setValueAtTime(220, now);
+                o.frequency.linearRampToValueAtTime(180, now + 0.5);
+                
+                const g = this.audioCtx.createGain();
+                g.gain.setValueAtTime(0.4, now);
+                g.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+                
+                o.connect(g).connect(this.master);
+                o.start(now);
+                o.stop(now + 0.5);
+            }
+        }
+        
+        // 初始化音频系统
+        const audio = new SimpleAudio();
+        
+        // ========== 鼓音色映射 ==========
+        const drumSoundMap = {
+            'crash1': 'crash',
+            'crash2': 'crash',
+            'hihat': 'hihat',
+            'ride': 'ride',
+            'hitem': 'tom-high',
+            'midtom': 'tom-mid',
+            'snare': 'snare',
+            'floortom': 'tom-floor',
+            'kickpedal': 'kick',
+            'hihatpedal': 'hihat-open'
+        };
+        
+        // ========== 游戏逻辑 ==========
+        const matrixCells = document.querySelectorAll('.matrix-cell:not(.empty)');
+        const noteElements = {
+            'crash1': document.getElementById('crash-note'),
+            'crash2': document.getElementById('crash-note'),
+            'hihat': document.getElementById('hihat-note'),
+            'ride': document.getElementById('ride-note'),
+            'hitem': document.getElementById('hitem-note'),
+            'midtom': document.getElementById('midtom-note'),
+            'snare': document.getElementById('snare-note'),
+            'floortom': document.getElementById('floortom-note'),
+            'kickpedal': document.getElementById('kick-note'),
+            'hihatpedal': document.getElementById('hihatpedal-note')
+        };
+        
+        const noteToDrumMap = {
+            'crash-note': ['crash1', 'crash2'],
+            'hihat-note': ['hihat'],
+            'ride-note': ['ride'],
+            'hitem-note': ['hitem'],
+            'midtom-note': ['midtom'],
+            'snare-note': ['snare'],
+            'floortom-note': ['floortom'],
+            'kick-note': ['kickpedal'],
+            'hihatpedal-note': ['hihatpedal']
+        };
+        
+        const drumNameMap = {
+            'crash1': {zh: '吊镲1', en: 'Crash 1'},
+            'crash2': {zh: '吊镲2', en: 'Crash 2'},
+            'hihat': {zh: '踩镲', en: 'Hi-hat'},
+            'ride': {zh: '叮叮镲', en: 'Ride'},
+            'hitem': {zh: '高音嗵鼓', en: 'Hi-Tom'},
+            'midtom': {zh: '中音嗵鼓', en: 'Mid-Tom'},
+            'snare': {zh: '军鼓', en: 'Snare'},
+            'floortom': {zh: '地嗵鼓', en: 'Floor Tom'},
+            'kickpedal': {zh: '底鼓踏板', en: 'Kick Pedal'},
+            'hihatpedal': {zh: '踩镲踏板', en: 'Hi-hat Pedal'}
+        };
+        
+        const noteIdToElementId = {
+            'crash-note': 'crash1',
+            'hihat-note': 'hihat',
+            'ride-note': 'ride',
+            'hitem-note': 'hitem',
+            'midtom-note': 'midtom',
+            'snare-note': 'snare',
+            'floortom-note': 'floortom',
+            'kick-note': 'kickpedal',
+            'hihatpedal-note': 'hihatpedal'
+        };
+        
+        const availableNoteIds = Object.keys(noteToDrumMap);
+        const quizButton = document.getElementById('quiz-button');
+        const endButton = document.getElementById('end-button');
+        const resultIcon = document.getElementById('result-icon');
+        const resultText = document.getElementById('result-text');
+        
+        // 获取统计显示元素
+        const statsTotal = document.getElementById('stats-total');
+        const statsCorrect = document.getElementById('stats-correct');
+        const statsAccuracy = document.getElementById('stats-accuracy');
+        
+        // 更新游戏状态，添加分数统计
+        let gameState = {
+            currentNote: null,
+            isQuizActive: false,
+            selectedCell: null,
+            score: {
+                total: 0,
+                correct: 0,
+                wrong: 0
+            }
+        };
+        
+        // 更新统计显示
+        function updateStatsDisplay() {
+            const total = gameState.score.total;
+            const correct = gameState.score.correct;
+            const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+            
+            statsTotal.textContent = total;
+            statsCorrect.textContent = correct;
+            statsAccuracy.textContent = `${accuracy}%`;
+        }
+        
+        // 获取随机音符
+        function getRandomNoteId() {
+            return availableNoteIds[Math.floor(Math.random() * availableNoteIds.length)];
+        }
+        
+        // 显示音符并播放音效
+        function showNote(noteId) {
+            Object.values(noteElements).forEach(element => {
+                if (element) element.style.display = 'none';
+            });
+            
+            const elementId = noteIdToElementId[noteId];
+            const noteElement = noteElements[elementId];
+            
+            if (noteElement) {
+                noteElement.style.display = 'block';
+            }
+            
+            gameState.currentNote = noteId;
+            
+            // 播放对应的鼓音色
+            const soundType = drumSoundMap[elementId];
+            if (soundType) {
+                audio.playDrum(soundType);
+            }
+        }
+        
+        // 开始新题目
+        function startNewQuestion() {
+            gameState.isQuizActive = true;
+            gameState.selectedCell = null;
+            
+            matrixCells.forEach(cell => {
+                cell.classList.remove('active', 'correct', 'wrong');
+            });
+            
+            resultIcon.className = 'result-icon result-waiting';
+            resultIcon.textContent = '?';
+            
+            // 显示当前统计信息
+            const total = gameState.score.total;
+            const correct = gameState.score.correct;
+            const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+            
+            if (total > 0) {
+                resultText.innerHTML = `请选择对应的鼓部件<br><small>已答: ${total}题 | 正确率: ${accuracy}%</small>`;
+            } else {
+                resultText.textContent = '请选择对应的鼓部件';
+            }
+            resultText.className = 'result-text';
+            
+            const noteId = getRandomNoteId();
+            showNote(noteId);
+            
+            quizButton.disabled = true;
+            quizButton.textContent = '答题中...';
+            endButton.disabled = false;
+        }
+        
+        // 结束答题
+        function endQuiz() {
+            gameState.isQuizActive = false;
+            gameState.currentNote = null;
+            
+            matrixCells.forEach(cell => {
+                cell.classList.remove('active', 'correct', 'wrong');
+            });
+            
+            Object.values(noteElements).forEach(element => {
+                if (element) element.style.display = 'none';
+            });
+            
+            // 显示最终统计
+            const total = gameState.score.total;
+            const correct = gameState.score.correct;
+            const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+            
+            resultIcon.className = 'result-icon result-waiting';
+            resultIcon.textContent = '?';
+            
+            if (total > 0) {
+                resultText.innerHTML = `答题结束<br><small>总题数: ${total} | 答对: ${correct} | 正确率: ${accuracy}%</small>`;
+            } else {
+                resultText.textContent = '等待出题';
+            }
+            resultText.className = 'result-text';
+            
+            quizButton.disabled = false;
+            quizButton.textContent = '开始出题';
+            endButton.disabled = true;
+        }
+        
+        // 检查答案
+        function checkAnswer(selectedDrum) {
+            if (!gameState.isQuizActive || !gameState.currentNote) return;
+            
+            const correctDrums = noteToDrumMap[gameState.currentNote];
+            const isCorrect = correctDrums.includes(selectedDrum);
+            
+            // 更新分数
+            gameState.score.total++;
+            if (isCorrect) {
+                gameState.score.correct++;
+                audio.playCorrect();
+                resultIcon.className = 'result-icon result-correct';
+                resultIcon.textContent = '✓';
+                
+                // 显示答对信息
+                const accuracy = Math.round((gameState.score.correct / gameState.score.total) * 100);
+                resultText.innerHTML = `正确！<br><small>已答: ${gameState.score.total}题 | 正确率: ${accuracy}%</small>`;
+                resultText.classList.add('correct');
+            } else {
+                gameState.score.wrong++;
+                audio.playWrong();
+                resultIcon.className = 'result-icon result-wrong';
+                resultIcon.textContent = '✗';
+                
+                // 显示错误信息
+                const accuracy = Math.round((gameState.score.correct / gameState.score.total) * 100);
+                resultText.innerHTML = `错误！<br><small>已答: ${gameState.score.total}题 | 正确率: ${accuracy}%</small>`;
+                resultText.classList.add('wrong');
+                
+                const correctCell = document.querySelector(`.matrix-cell[data-note="${correctDrums[0]}"]`);
+                if (correctCell) {
+                    correctCell.classList.add('correct');
+                }
+            }
+            
+            // 更新统计显示
+            updateStatsDisplay();
+            
+            // 播放选择的鼓音色
+            const soundType = drumSoundMap[selectedDrum];
+            if (soundType) {
+                audio.playDrum(soundType);
+            }
+            
+            const selectedCell = document.querySelector(`.matrix-cell[data-note="${selectedDrum}"]`);
+            if (selectedCell) {
+                selectedCell.classList.add(isCorrect ? 'correct' : 'wrong');
+            }
+            
+            gameState.isQuizActive = false;
+            quizButton.disabled = false;
+            quizButton.textContent = '下一题';
+            endButton.disabled = false;
+        }
+        
+        // 普通点击显示音符
+        function showNoteOnClick(selectedDrum) {
+            if (gameState.isQuizActive) return;
+            
+            matrixCells.forEach(cell => {
+                cell.classList.remove('active');
+            });
+            
+            const selectedCell = document.querySelector(`.matrix-cell[data-note="${selectedDrum}"]`);
+            if (selectedCell) {
+                selectedCell.classList.add('active');
+            }
+            
+            Object.values(noteElements).forEach(element => {
+                if (element) element.style.display = 'none';
+            });
+            
+            const elementId = drumNameMap[selectedDrum] ? selectedDrum : null;
+            if (elementId && noteElements[elementId]) {
+                noteElements[elementId].style.display = 'block';
+            }
+            
+            const drumName = drumNameMap[selectedDrum];
+            if (drumName) {
+                resultText.textContent = `当前显示：${drumName.zh}`;
+                resultText.className = 'result-text';
+                resultIcon.className = 'result-icon result-waiting';
+                resultIcon.textContent = '♪';
+            }
+            
+            // 播放鼓音色
+            const soundType = drumSoundMap[selectedDrum];
+            if (soundType) {
+                audio.playDrum(soundType);
+            }
+        }
+        
+        // ========== 事件监听 ==========
+        matrixCells.forEach(cell => {
+            cell.addEventListener('click', function() {
+                const selectedDrum = this.dataset.note;
+                
+                if (gameState.isQuizActive) {
+                    checkAnswer(selectedDrum);
+                } else {
+                    showNoteOnClick(selectedDrum);
+                }
+            });
+        });
+        
+        quizButton.addEventListener('click', function() {
+            if (gameState.isQuizActive) {
+                startNewQuestion();
+            } else {
+                startNewQuestion();
+            }
+        });
+        
+        endButton.addEventListener('click', endQuiz);
+        
+        // ========== 初始化 ==========
+        window.addEventListener('load', function() {
+            Object.values(noteElements).forEach(element => {
+                if (element) element.style.display = 'none';
+            });
+            endButton.disabled = true;
+            
+            // 初始化统计显示
+            updateStatsDisplay();
+        });
+    </script>
+</body>
+</html>
