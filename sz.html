@@ -198,7 +198,7 @@ select option.mix-ultimate{color:var(--orange)!important;font-weight:700!importa
   display:block;         /* 去掉img底部空隙 */
   object-fit:contain;    /* 等比缩放，不变形 */
   object-position:center;
-  padding:0;             /* 最大化内容，确保竖屏也能塞下4张 */
+  padding:2%;             /* 最大化内容，确保竖屏也能塞下4张 */
   box-sizing:border-box;
 }
 
@@ -214,10 +214,15 @@ select option.mix-ultimate{color:var(--orange)!important;font-weight:700!importa
 
 /* 播放时：当前 beat 的卡片闪烁（不靠border，靠inset阴影） */
 .card-slot.beat-active{
+  animation: beatFlash 160ms ease-out;
   box-shadow:
-    inset 0 0 0 2px rgba(255,152,0,0.95),
+    inset 0 0 0 3px rgba(255,152,0,0.95),
     0 10px 20px rgba(0,0,0,0.25);
-  filter: brightness(1.03);
+}
+
+@keyframes beatFlash{
+  0%   { filter: brightness(1.18); }
+  100% { filter: brightness(1.03); }
 }
 
 /* ===== 信息区 ===== */
@@ -396,7 +401,7 @@ select option.mix-ultimate{color:var(--orange)!important;font-weight:700!importa
 .big-beat-text{
   font-size:min(42vw, 320px);
   font-weight:1000;
-  color:rgba(233,236,243,0.18);
+  color:rgba(255,255,255,0.3);
   text-shadow:0 10px 40px rgba(0,0,0,0.35);
   letter-spacing:2px;
 }
