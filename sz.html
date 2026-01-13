@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>节奏卡片练习 + 节拍器</title>
+
+<style>
+:root{
+  --bg:#0f131f;
+  --card-bg:#1a1f2e;
+  --border:#2a324f;
+  --text:#e2e7f2;
+  --accent:#4a6fff;
+  --muted:#6b7a9f;
+  --orange:#FF9800;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  padding:14px;
+  min-width:320px;
+  line-height:1.5;
+}
+
+header{
+  margin-bottom:12px;
+  text-align:center;
+  position:relative;
+}
+h1{font-size:20px;margin-bottom:6px}
+.subtitle{color:var(--muted);font-size:13px}
+.home-link{
+  position:absolute;left:10px;top:0;
+  text-decoration:none;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:36px;height:36px;
+  background:var(--card-bg);
+  border-radius:999px;
+  border:1px solid var(--border);
+  transition:all .2s ease;
+}
+.home-link:hover{background:var(--accent);border-color:var(--accent);transform:scale(1.04)}
+.home-link svg{width:18px;height:18px;fill:var(--text)}
+
+/* ===== 顶部控制区（极简） ===== */
+.controls{
+  display:grid;
+  grid-template-columns: 1.2fr 1fr 1fr 1.2fr;
+  gap:10px;
+  margin-bottom:12px;
+  background:var(--card-bg);
+  padding:12px;
+  border-radius:10px;
+  border:1px solid var(--border);
+}
+@media (max-width: 900px){
+  .controls{grid-template-columns:1fr 1fr}
+}
+@media (max-width: 520px){
+  .controls{grid-template-columns:1fr}
+}
+
+.control-group{display:flex;flex-direction:column;gap:8px;min-width:0}
+.control-group label{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.2px}
+
+.select-wrapper{position:relative;width:100%}
+select{
+  width:100%;
+  background:rgba(255,255,255,0.05);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:10px 34px 10px 12px;
+  color:var(--text);
+  font-size:13px;
+  cursor:pointer;
+  outline:none;
+  appearance:none;
+}
+select:focus{border-color:var(--accent)}
+.select-wrapper::after{
+  content:"▼";
+  font-size:10px;
+  color:var(--muted);
+  position:absolute;
+  right:12px;
+  top:50%;
+  transform:translateY(-50%);
+  pointer-events:none;
+}
+select option{background:var(--card-bg);color:var(--text);font-size:13px}
+select option.mix-ultimate{color:var(--orange)!important;font-weight:700!important}
+
+/* 卡片数量：- 4 + */
+.stepper{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.stepper-btn{
+  width:36px;height:36px;
+  border:1px solid var(--border);
+  background:rgba(255,255,255,0.05);
+  color:var(--text);
+  border-radius:10px;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;
+  transition:all .15s ease;
+  user-select:none;
+}
+.stepper-btn:hover{background:rgba(255,255,255,0.09);border-color:var(--accent)}
+.stepper-value{
+  flex:1;
+  height:36px;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:rgba(255,255,255,0.03);
+  font-weight:700;
+  color:var(--accent);
+  letter-spacing:.5px;
+}
+
+/* 出题 + 播放 同一栏 */
+.action-row{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.btn{
+  border:none;
+  border-radius:10px;
+  padding:10px 14px;
+  cursor:pointer;
+  font-size:14px;
+  font-weight:650;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  transition:all .15s ease;
+  user-select:none;
+}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{opacity:.92;transform:translateY(-1px)}
+.btn-ghost{
+  background:rgba(255,255,255,0.05);
+  border:1px solid var(--border);
+  color:var(--text);
+}
+.btn-ghost:hover{background:rgba(255,255,255,0.09);border-color:var(--accent)}
+.btn svg{width:16px;height:16px;fill:currentColor}
+
+/* ===== 卡片展示：默认 4 列；>4 自动两排（网格自动换行） ===== */
+.cards-display{
+  width:100%;
+  margin-bottom:12px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:rgba(255,255,255,0.02);
+  padding:10px;
+}
+
+.cards-container{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap:10px;
+  align-items:stretch;
+}
+@media (max-width: 900px){
+  .cards-container{grid-template-columns: repeat(2, minmax(0, 1fr))}
+}
+@media (max-width: 420px){
+  .cards-container{grid-template-columns: 1fr}
+}
+
+/* 卡片本体：用 aspect-ratio 适配手机竖屏缩放 */
+.card-slot{
+  position:relative;
+  border:1px solid var(--border);
+  border-radius:12px;
+  overflow:hidden;
+  background:var(--card-bg);
+  cursor:pointer;
+  transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+  aspect-ratio: 3 / 5;
+  min-height: 220px;
+}
+.card-slot:hover{
+  border-color:var(--accent);
+  transform:translateY(-1px);
+  box-shadow:0 10px 22px rgba(0,0,0,.25);
+}
+.card-slot img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  padding:14px;
+}
+.card-fallback{
+  display:none;
+  width:100%;height:100%;
+  align-items:center;justify-content:center;
+  font-size:22px;
+  font-weight:800;
+  color:var(--accent);
+  font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+
+/* 播放时：当前 beat 的卡片边框闪烁 */
+.card-slot.beat-active{
+  border-color:var(--orange);
+  box-shadow:0 0 0 2px rgba(255,152,0,.2), 0 18px 30px rgba(0,0,0,.28);
+  animation: beatPulse .22s ease-out;
+}
+@keyframes beatPulse{
+  0%{transform:translateY(0) scale(1)}
+  50%{transform:translateY(-1px) scale(1.01)}
+  100%{transform:translateY(0) scale(1)}
+}
+
+/* ===== 信息区 ===== */
+.card-info{
+  background:var(--card-bg);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:12px;
+  margin-bottom:12px;
+  min-height:72px;
+}
+.info-placeholder{
+  color:var(--muted);
+  text-align:center;
+  font-style:italic;
+  padding:6px 0;
+  font-size:13px;
+}
+.card-details{display:none}
+.card-details.active{display:block}
+.card-name{font-size:15px;font-weight:800;margin-bottom:6px;color:var(--accent)}
+.card-pattern{
+  font-family:ui-monospace, monospace;
+  font-size:13px;
+  margin-bottom:8px;
+  color:var(--text);
+  background:rgba(255,255,255,0.05);
+  padding:4px 8px;
+  border-radius:8px;
+  display:inline-block;
+}
+.card-desc{color:var(--muted);font-size:13px;line-height:1.4}
+
+/* ===== 节拍器：默认折叠（只显示标题行） ===== */
+.metronome-shell{
+  background:var(--card-bg);
+  border:1px solid var(--border);
+  border-radius:10px;
+  overflow:hidden;
+}
+.metro-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:12px 12px;
+  cursor:pointer;
+  user-select:none;
+}
+.metro-head-left{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+.metro-title{
+  font-size:15px;
+  font-weight:800;
+  color:var(--accent);
+}
+.metro-status{
+  font-size:12px;
+  color:var(--muted);
+  padding:4px 8px;
+  background:rgba(255,255,255,0.05);
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,0.06);
+}
+.chev{
+  width:34px;height:34px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:rgba(255,255,255,0.05);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .15s ease, border-color .15s ease, background .15s ease;
+}
+.chev svg{width:16px;height:16px;fill:var(--text)}
+.metronome-shell.open .chev{transform:rotate(180deg);border-color:var(--accent);background:rgba(255,255,255,0.08)}
+
+/* 折叠内容区 */
+.metro-body{
+  display:none;
+  padding:12px;
+  border-top:1px solid rgba(255,255,255,0.06);
+}
+.metronome-shell.open .metro-body{display:block}
+
+.metronome-controls{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:10px;
+  margin-bottom:10px;
+}
+@media (max-width: 768px){
+  .metronome-controls{grid-template-columns:1fr}
+}
+
+.control-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.control-label{font-size:12px;color:var(--muted);min-width:56px;font-weight:650}
+
+.bpm-control{display:flex;align-items:center;gap:8px}
+.bpm-input{
+  width:84px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:8px 10px;
+  color:var(--text);
+  font-size:14px;
+  text-align:center;
+  outline:none;
+}
+.bpm-input:focus{border-color:var(--accent)}
+.bpm-btn{
+  width:36px;height:36px;
+  border:1px solid var(--border);
+  background:rgba(255,255,255,0.05);
+  color:var(--text);
+  border-radius:10px;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;
+  transition:all .15s ease;
+}
+.bpm-btn:hover{background:rgba(255,255,255,0.09);border-color:var(--accent)}
+
+.secondary-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.small-btn{
+  background:rgba(255,255,255,0.05);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:9px 12px;
+  color:var(--text);
+  cursor:pointer;
+  font-size:13px;
+  font-weight:650;
+  display:flex;align-items:center;gap:8px;
+  transition:all .15s ease;
+}
+.small-btn:hover{background:rgba(255,255,255,0.09);border-color:var(--accent)}
+.small-btn svg{width:16px;height:16px;fill:currentColor}
+.small-btn.active{background:rgba(74,111,255,0.2);border-color:var(--accent);color:var(--accent)}
+
+.beat-info{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:8px 0 10px;
+  font-size:12px;
+  color:var(--muted);
+}
+.badge{
+  background:rgba(255,255,255,0.05);
+  padding:2px 8px;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,0.06);
+}
+
+.canvas-container{
+  border:1px solid var(--border);
+  border-radius:10px;
+  overflow:hidden;
+  background:rgba(0,0,0,0.18);
+  margin-bottom:10px;
+}
+#gridCanvas,#jpCanvas{width:100%;height:auto;display:block}
+
+/* 大字层 */
+.big-beat{
+  position:fixed;inset:0;
+  display:none;
+  justify-content:center;
+  align-items:center;
+  pointer-events:none;
+  z-index:1000;
+}
+.big-beat-text{
+  font-size:min(42vw, 320px);
+  font-weight:1000;
+  color:rgba(233,236,243,0.18);
+  text-shadow:0 10px 40px rgba(0,0,0,0.35);
+  letter-spacing:2px;
+}
+</style>
+</head>
+
+<body>
+<header>
+  <a href="index.html" class="home-link" title="返回首页">
+    <svg viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>
+  </a>
+  <h1>节奏卡片练习 + 节拍器</h1>
+  <p class="subtitle">识别节奏型并配合节拍器练习</p>
+</header>
+
+<!-- 控制区（含 出题 + 播放 同栏） -->
+<div class="controls">
+  <div class="control-group">
+    <label>卡片数量</label>
+    <div class="stepper">
+      <button class="stepper-btn" id="countMinus" aria-label="减少卡片数量">−</button>
+      <div class="stepper-value" id="countDisplay">4</div>
+      <button class="stepper-btn" id="countPlus" aria-label="增加卡片数量">+</button>
+    </div>
+  </div>
+
+  <div class="control-group">
+    <label>卡片类型</label>
+    <div class="select-wrapper">
+      <select id="cardType">
+        <option value="4">4细分卡片</option>
+        <option value="3">3细分卡片</option>
+        <option value="mix">混合卡片</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="control-group">
+    <label>难度选择</label>
+    <div class="select-wrapper">
+      <select id="difficultySelect"></select>
+    </div>
+  </div>
+
+  <div class="control-group">
+    <label>操作</label>
+    <div class="action-row">
+      <button class="btn btn-primary" id="startQuiz">
+        <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2zm1 14.5h-2V10h2v6.5zm0-8h-2V6h2v2.5z"/></svg>
+        出题
+      </button>
+
+      <button class="btn btn-ghost" id="playBtn">
+        <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l12-7z"></path></svg>
+        <span id="playText">播放</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 卡片展示 -->
+<div class="cards-display">
+  <div class="cards-container" id="cardsContainer"></div>
+</div>
+
+<!-- 信息区 -->
+<div class="card-info">
+  <div id="infoPlaceholder" class="info-placeholder">点击“出题”开始，点击卡片查看详细信息</div>
+  <div id="cardDetails" class="card-details">
+    <div class="card-name" id="detailName"></div>
+    <div class="card-pattern" id="detailPattern"></div>
+    <div class="card-desc" id="detailDesc"></div>
+  </div>
+</div>
+
+<!-- 节拍器：默认折叠 -->
+<div class="metronome-shell" id="metronomeShell">
+  <div class="metro-head" id="metroToggle">
+    <div class="metro-head-left">
+      <div class="metro-title">节拍器</div>
+      <span class="metro-status" id="metroStatus">就绪</span>
+    </div>
+    <div class="chev" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+    </div>
+  </div>
+
+  <div class="metro-body">
+    <div class="metronome-controls">
+      <div class="control-row">
+        <span class="control-label">BPM</span>
+        <div class="bpm-control">
+          <button class="bpm-btn" id="bpmMinus">−</button>
+          <input type="number" id="bpmInput" class="bpm-input" value="60" min="40" max="250">
+          <button class="bpm-btn" id="bpmPlus">+</button>
+        </div>
+      </div>
+
+      <div class="secondary-actions">
+        <button class="small-btn" id="resetBtn">
+          <svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 1 1-6.65 9H3l3.5-3.5L10 14H7.42A5 5 0 1 0 12 7V5z"/></svg>
+          复位
+        </button>
+
+        <button class="small-btn active" id="bigBtn">
+          <svg viewBox="0 0 24 24"><path d="M4 19h4l2-6h4l2 6h4L14 5h-4L4 19zm7.3-9L12 7.7 12.7 10h-1.4z"/></svg>
+          大字开
+        </button>
+      </div>
+    </div>
+
+    <div class="beat-info">
+      <span>当前设置</span>
+      <span class="badge" id="beatCount">4 beats</span>
+      <span class="badge" id="subdivInfo">4 细分</span>
+    </div>
+
+    <div class="canvas-container">
+      <canvas id="gridCanvas" width="980" height="520"></canvas>
+    </div>
+
+    <div class="canvas-container">
+      <canvas id="jpCanvas" width="980" height="190"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- 大字显示 -->
+<div class="big-beat" id="bigBeat">
+  <div class="big-beat-text" id="bigBeatText">1</div>
+</div>
+
+<script>
+/* =========================
+   卡片数据（保持你的原数据）
+   ========================= */
+const cardsByDifficulty = {
+  "4_1":[
+    { id:"41000", name:"四分", pattern:"1000", desc:"正拍四分音符" },
+    { id:"40000", name:"四分休止", pattern:"0000", desc:"全部无声" }
+  ],
+  "4_2":[
+    { id:"41000", name:"四分", pattern:"1000", desc:"正拍四分音符" },
+    { id:"40000", name:"四分休止", pattern:"0000", desc:"全部无声" },
+    { id:"41030", name:"八分", pattern:"1030", desc:"第一、三位置" },
+    { id:"40030", name:"后八分", pattern:"0030", desc:"第三位置八分音符" }
+  ],
+  "4_3":[
+    { id:"41000", name:"四分", pattern:"1000", desc:"正拍四分音符" },
+    { id:"40000", name:"四分休止", pattern:"0000", desc:"全部无声" },
+    { id:"41030", name:"八分", pattern:"1030", desc:"第一、三位置" },
+    { id:"40030", name:"后八分", pattern:"0030", desc:"第三位置八分音符" },
+    { id:"41034", name:"前八后十六", pattern:"1034", desc:"第一、三、四位置" },
+    { id:"41230", name:"前十六后八", pattern:"1230", desc:"第一、二、三位置" }
+  ],
+  "4_4":[
+    { id:"41000", name:"四分", pattern:"1000", desc:"正拍四分音符" },
+    { id:"40000", name:"四分休止", pattern:"0000", desc:"全部无声" },
+    { id:"41030", name:"八分", pattern:"1030", desc:"第一、三位置" },
+    { id:"40030", name:"后八分", pattern:"0030", desc:"第三位置八分音符" },
+    { id:"41034", name:"前八后十六", pattern:"1034", desc:"第一、三、四位置" },
+    { id:"41230", name:"前十六后八", pattern:"1230", desc:"第一、二、三位置" },
+    { id:"41204", name:"小切分", pattern:"1204", desc:"第一、二、四位置" }
+  ],
+  "4_5":[
+    { id:"41000", name:"四分", pattern:"1000", desc:"正拍四分音符" },
+    { id:"40000", name:"四分休止", pattern:"0000", desc:"全部无声" },
+    { id:"41030", name:"八分", pattern:"1030", desc:"第一、三位置" },
+    { id:"40030", name:"后八分", pattern:"0030", desc:"第三位置八分音符" },
+    { id:"41034", name:"前八后十六", pattern:"1034", desc:"第一、三、四位置" },
+    { id:"41230", name:"前十六后八", pattern:"1230", desc:"第一、二、三位置" },
+    { id:"41204", name:"小切分", pattern:"1204", desc:"第一、二、四位置" },
+    { id:"41234", name:"十六分", pattern:"1234", desc:"所有四个位置" }
+  ],
+  "4_6":[
+    { id:"41000", name:"四分", pattern:"1000", desc:"正拍四分音符" },
+    { id:"40000", name:"四分休止", pattern:"0000", desc:"全部无声" },
+    { id:"41030", name:"八分", pattern:"1030", desc:"第一、三位置" },
+    { id:"40030", name:"后八分", pattern:"0030", desc:"第三位置八分音符" },
+    { id:"41034", name:"前八后十六", pattern:"1034", desc:"第一、三、四位置" },
+    { id:"41230", name:"前十六后八", pattern:"1230", desc:"第一、二、三位置" },
+    { id:"41204", name:"小切分", pattern:"1204", desc:"第一、二、四位置" },
+    { id:"41234", name:"十六分", pattern:"1234", desc:"所有四个位置" },
+    { id:"41004", name:"前附点", pattern:"1004", desc:"第一、四位置" },
+    { id:"41200", name:"后附点", pattern:"1200", desc:"第一、二位置" }
+  ],
+  "4_7":[
+    { id:"41000", name:"四分", pattern:"1000", desc:"正拍四分音符" },
+    { id:"40000", name:"四分休止", pattern:"0000", desc:"全部无声" },
+    { id:"41030", name:"八分", pattern:"1030", desc:"第一、三位置" },
+    { id:"40030", name:"后八分", pattern:"0030", desc:"第三位置八分音符" },
+    { id:"41034", name:"前八后十六", pattern:"1034", desc:"第一、三、四位置" },
+    { id:"41230", name:"前十六后八", pattern:"1230", desc:"第一、二、三位置" },
+    { id:"41204", name:"小切分", pattern:"1204", desc:"第一、二、四位置" },
+    { id:"41234", name:"十六分", pattern:"1234", desc:"所有四个位置" },
+    { id:"41004", name:"前附点", pattern:"1004", desc:"第一、四位置" },
+    { id:"41200", name:"后附点", pattern:"1200", desc:"第一、二位置" },
+    { id:"40200", name:"第二位置", pattern:"0200", desc:"第二位置八分音符" },
+    { id:"40004", name:"第四位置", pattern:"0004", desc:"第四位置八分音符" }
+  ],
+  "4_8":[
+    { id:"41000", name:"四分", pattern:"1000", desc:"正拍四分音符" },
+    { id:"40200", name:"第二位置", pattern:"0200", desc:"第二位置八分音符" },
+    { id:"40030", name:"后八分", pattern:"0030", desc:"第三位置八分音符" },
+    { id:"40004", name:"第四位置", pattern:"0004", desc:"第四位置八分音符" },
+    { id:"41200", name:"后附点", pattern:"1200", desc:"第一、二位置" },
+    { id:"41030", name:"八分", pattern:"1030", desc:"第一、三位置" },
+    { id:"41230", name:"前十六后八", pattern:"1230", desc:"第一、二、三位置" },
+    { id:"41034", name:"前八后十六", pattern:"1034", desc:"第一、三、四位置" },
+    { id:"40234", name:"后三位置", pattern:"0234", desc:"第二、三、四位置" },
+    { id:"41234", name:"十六分", pattern:"1234", desc:"所有四个位置" },
+    { id:"40230", name:"二三位置", pattern:"0230", desc:"第二、三位置" },
+    { id:"41004", name:"前附点", pattern:"1004", desc:"第一、四位置" },
+    { id:"40204", name:"16反拍", pattern:"0204", desc:"第二、四位置" },
+    { id:"40034", name:"后16分", pattern:"0034", desc:"第三、四位置" },
+    { id:"40000", name:"四分休止", pattern:"0000", desc:"全部无声" },
+    { id:"41204", name:"小切分", pattern:"1204", desc:"第一、二、四位置" }
+  ],
+
+  "3_1":[
+    { id:"3100", name:"四分", pattern:"100", desc:"正拍四分音符（3细分）" },
+    { id:"3000", name:"四分休止", pattern:"000", desc:"完全休止（3细分）" }
+  ],
+  "3_2":[
+    { id:"3100", name:"四分", pattern:"100", desc:"正拍四分音符（3细分）" },
+    { id:"3000", name:"四分休止", pattern:"000", desc:"完全休止（3细分）" },
+    { id:"3123", name:"三连音", pattern:"123", desc:"完整三连音" }
+  ],
+  "3_3":[
+    { id:"3100", name:"四分", pattern:"100", desc:"正拍四分音符（3细分）" },
+    { id:"3000", name:"四分休止", pattern:"000", desc:"完全休止（3细分）" },
+    { id:"3123", name:"三连音", pattern:"123", desc:"完整三连音" },
+    { id:"3103", name:"Swing节奏", pattern:"103", desc:"Swing节奏型" }
+  ],
+  "3_4":[
+    { id:"3100", name:"四分", pattern:"100", desc:"正拍四分音符（3细分）" },
+    { id:"3020", name:"第二位置", pattern:"020", desc:"第二位置（3细分）" },
+    { id:"3003", name:"第三位置", pattern:"003", desc:"第三位置（3细分）" },
+    { id:"3120", name:"前两个", pattern:"120", desc:"前两个位置" },
+    { id:"3023", name:"后两个", pattern:"023", desc:"后两个位置" },
+    { id:"3103", name:"Swing节奏", pattern:"103", desc:"Swing节奏型" },
+    { id:"3123", name:"三连音", pattern:"123", desc:"完整三连音" },
+    { id:"3000", name:"空拍", pattern:"000", desc:"全部无声（3细分）" }
+  ],
+
+  "mix_1":[
+    { id:"41000", name:"四分", pattern:"1000", desc:"正拍四分音符" },
+    { id:"40200", name:"第二位置", pattern:"0200", desc:"第二位置八分音符" },
+    { id:"40030", name:"后八分", pattern:"0030", desc:"第三位置八分音符" },
+    { id:"40004", name:"第四位置", pattern:"0004", desc:"第四位置八分音符" },
+    { id:"41200", name:"后附点", pattern:"1200", desc:"第一、二位置" },
+    { id:"41030", name:"八分", pattern:"1030", desc:"第一、三位置" },
+    { id:"41230", name:"前十六后八", pattern:"1230", desc:"第一、二、三位置" },
+    { id:"41034", name:"前八后十六", pattern:"1034", desc:"第一、三、四位置" },
+    { id:"40234", name:"后三位置", pattern:"0234", desc:"第二、三、四位置" },
+    { id:"41234", name:"十六分", pattern:"1234", desc:"所有四个位置" },
+    { id:"40230", name:"二三位置", pattern:"0230", desc:"第二、三位置" },
+    { id:"41004", name:"前附点", pattern:"1004", desc:"第一、四位置" },
+    { id:"40204", name:"16反拍", pattern:"0204", desc:"第二、四位置" },
+    { id:"40034", name:"后16分", pattern:"0034", desc:"第三、四位置" },
+    { id:"40000", name:"四分休止", pattern:"0000", desc:"全部无声" },
+    { id:"41204", name:"小切分", pattern:"1204", desc:"第一、二、四位置" },
+    { id:"3100", name:"四分", pattern:"100", desc:"正拍四分音符（3细分）" },
+    { id:"3020", name:"第二位置", pattern:"020", desc:"第二位置（3细分）" },
+    { id:"3003", name:"第三位置", pattern:"003", desc:"第三位置（3细分）" },
+    { id:"3120", name:"前两个", pattern:"120", desc:"前两个位置" },
+    { id:"3023", name:"后两个", pattern:"023", desc:"后两个位置" },
+    { id:"3103", name:"Swing节奏", pattern:"103", desc:"Swing节奏型" },
+    { id:"3123", name:"三连音", pattern:"123", desc:"完整三连音" },
+    { id:"3000", name:"空拍", pattern:"000", desc:"全部无声（3细分）" }
+  ]
+};
+
+const difficultyDescriptions = {
+  "4":[
+    { level:1, name:"四分音符及休止符" },
+    { level:2, name:"八分音符及后八" },
+    { level:3, name:"前八后十六及前十六后八" },
+    { level:4, name:"小切分" },
+    { level:5, name:"十六分音符" },
+    { level:6, name:"前/后附点音符" },
+    { level:7, name:"更多点位" },
+    { level:8, name:"全部点位" }
+  ],
+  "3":[
+    { level:1, name:"四分音符及休止" },
+    { level:2, name:"三连音" },
+    { level:3, name:"Swing摇摆起来" },
+    { level:4, name:"全部点位" }
+  ],
+  "mix":[
+    { level:1, name:"🚀 我全会了 · 终极挑战" }
+  ]
+};
+
+/* =========================
+   状态与DOM
+   ========================= */
+let cardState = {
+  currentType:"4",
+  currentDifficulty:3,
+  currentCards:[],
+  selectedCard:null,
+  count:4
+};
+
+const countMinus = document.getElementById("countMinus");
+const countPlus  = document.getElementById("countPlus");
+const countDisplay = document.getElementById("countDisplay");
+
+const cardType = document.getElementById("cardType");
+const difficultySelect = document.getElementById("difficultySelect");
+const startQuizBtn = document.getElementById("startQuiz");
+const cardsContainer = document.getElementById("cardsContainer");
+const infoPlaceholder = document.getElementById("infoPlaceholder");
+const cardDetails = document.getElementById("cardDetails");
+const detailName = document.getElementById("detailName");
+const detailPattern = document.getElementById("detailPattern");
+const detailDesc = document.getElementById("detailDesc");
+
+/* 折叠节拍器 */
+const metronomeShell = document.getElementById("metronomeShell");
+const metroToggle = document.getElementById("metroToggle");
+
+/* 节拍器DOM */
+const gridCanvas = document.getElementById("gridCanvas");
+const jpCanvas = document.getElementById("jpCanvas");
+const bpmInput = document.getElementById("bpmInput");
+const bpmMinus = document.getElementById("bpmMinus");
+const bpmPlus = document.getElementById("bpmPlus");
+const playBtn = document.getElementById("playBtn");
+const playIcon = document.getElementById("playIcon");
+const playText = document.getElementById("playText");
+const resetBtn = document.getElementById("resetBtn");
+const bigBtn = document.getElementById("bigBtn");
+const metroStatus = document.getElementById("metroStatus");
+const beatCount = document.getElementById("beatCount");
+const subdivInfo = document.getElementById("subdivInfo");
+const bigBeat = document.getElementById("bigBeat");
+const bigBeatText = document.getElementById("bigBeatText");
+
+const gridCtx = gridCanvas.getContext("2d");
+const jpCtx = jpCanvas.getContext("2d");
+
+/* =========================
+   节拍器状态
+   ========================= */
+let metroState = {
+  bpm: 60,
+  beats: 4,
+  subdiv: [4,4,4,4],
+  pattern: [],
+  running: false,
+  currentBeat: 0,
+  currentSub: 0,
+  flashUntil: 0,
+  audioContext: null,
+  timer: null,
+  beatStartTime: 0,
+  nextTickTime: 0,
+  playingBeat: 0,
+  playingSub: 0
+};
+
+let bigBeatMode = true; // ✅ 默认开启
+
+const sounds = {
+  "强": {freq: 2200, ms: 18},
+  "中强": {freq: 1600, ms: 16},
+  "弱": {freq: 1100, ms: 12},
+  "静音": {freq: 0, ms: 0}
+};
+const metroSound = {freq: 2500, ms: 10};
+
+/* =========================
+   工具：卡片 beat 闪烁（外框）
+   ========================= */
+function highlightCardBeat(beatIndex){
+  const slots = cardsContainer.querySelectorAll(".card-slot");
+  slots.forEach((el, i) => {
+    if(i === beatIndex) el.classList.add("beat-active");
+    else el.classList.remove("beat-active");
+  });
+  // 自动消除闪烁（避免停在亮态）
+  setTimeout(() => {
+    const slots2 = cardsContainer.querySelectorAll(".card-slot");
+    if (slots2[beatIndex]) slots2[beatIndex].classList.remove("beat-active");
+  }, 160);
+}
+
+/* =========================
+   卡片 -> 节拍器同步（保持你的逻辑）
+   ========================= */
+function syncMetronomeToCards(cards){
+  if(!cards || cards.length === 0) return;
+
+  metroState.beats = cards.length;
+  beatCount.textContent = `${cards.length} beats`;
+
+  metroState.subdiv = [];
+  metroState.pattern = [];
+  metroState.currentBeat = 0;
+  metroState.currentSub = 0;
+  metroState.flashUntil = 0;
+  metroState.playingBeat = 0;
+  metroState.playingSub = 0;
+
+  let hasThree=false, hasFour=false;
+
+  for(let i=0;i<cards.length;i++){
+    const card = cards[i];
+    const pattern = card.pattern;
+    const subdivCount = pattern.length; // 3 或 4
+
+    if(subdivCount === 3) hasThree=true;
+    if(subdivCount === 4) hasFour=true;
+
+    metroState.subdiv[i] = subdivCount;
+
+    const beatPattern = [];
+    for(let j=0;j<subdivCount;j++){
+      const ch = pattern[j];
+      if(ch === "1"){
+        if(j === 0) beatPattern.push(i===0 ? "强" : "中强");
+        else beatPattern.push("弱");
+      }else if(ch === "2" || ch === "3" || ch === "4"){
+        beatPattern.push("弱");
+      }else{
+        beatPattern.push("静音");
+      }
+    }
+    metroState.pattern[i] = beatPattern;
+  }
+
+  if(hasThree && hasFour) subdivInfo.textContent = "3/4 混合";
+  else if(hasThree) subdivInfo.textContent = "3 细分";
+  else subdivInfo.textContent = "4 细分";
+
+  pauseMetronome();
+  drawGrid();
+  drawJp();
+  metroStatus.textContent = "已同步";
+}
+
+/* =========================
+   绘制（基本沿用你的实现）
+   ========================= */
+function drawGrid(){
+  const W=gridCanvas.width,H=gridCanvas.height;
+  gridCtx.clearRect(0,0,W,H);
+
+  const grad = gridCtx.createRadialGradient(W*0.35,H*0.2,20,W*0.5,H*0.6,W);
+  grad.addColorStop(0,"#0e1426");
+  grad.addColorStop(1,"#070a12");
+  gridCtx.fillStyle=grad;
+  gridCtx.fillRect(0,0,W,H);
+
+  const marginL=70, marginR=30, marginT=56, marginB=54;
+  const usableW=W-marginL-marginR;
+  const usableH=H-marginT-marginB;
+  const colW=Math.max(56, Math.min(96, Math.floor(usableW/Math.max(1, metroState.beats))));
+  const gridW=metroState.beats*colW;
+  const maxN=Math.max(...metroState.subdiv,1);
+  const refCellH=Math.max(46, Math.min(78, Math.floor(usableH/Math.max(1,maxN))));
+  const gridH=Math.max(maxN*refCellH, refCellH*4);
+  const left=marginL + Math.max(0, Math.floor((usableW-gridW)/2));
+  const top=marginT + Math.max(0, Math.floor((usableH-gridH)/2));
+
+  gridCtx.strokeStyle="rgba(255,255,255,.14)";
+  gridCtx.lineWidth=2.2;
+  for(let b=0;b<metroState.beats;b++){
+    const cx=left+b*colW+colW/2;
+    gridCtx.beginPath();
+    gridCtx.moveTo(cx, top);
+    gridCtx.lineTo(cx, top+gridH);
+    gridCtx.stroke();
+  }
+
+  for(let b=0;b<metroState.beats;b++){
+    const n=metroState.subdiv[b] || 4;
+    const cx=left+b*colW+colW/2;
+    for(let s=0;s<n;s++){
+      const y0=top+(s/n)*gridH;
+      const segH=gridH/n;
+      const iconY=y0+Math.min(18, Math.max(12, segH*0.28));
+      const acc = (metroState.pattern[b] ? metroState.pattern[b][s] : "静音");
+      const active = (metroState.playingBeat===b && metroState.playingSub===s && performance.now() < metroState.flashUntil);
+      drawAccentIcon(cx, iconY, acc, active);
+    }
+  }
+}
+
+function drawAccentIcon(cx, cy, name, active){
+  gridCtx.save();
+  gridCtx.lineWidth = active ? 3 : 1.8;
+
+  if(active){
+    gridCtx.globalAlpha=0.18;
+    gridCtx.fillStyle="rgba(77,163,255,0.85)";
+    gridCtx.beginPath();
+    gridCtx.arc(cx,cy,20,0,Math.PI*2);
+    gridCtx.fill();
+    gridCtx.globalAlpha=1;
+  }
+
+  gridCtx.strokeStyle="#ffffff";
+  gridCtx.fillStyle = (active && name !== "静音") ? "#ffffff" : "transparent";
+  const r=11;
+
+  if(name==="强"){
+    drawRoundedRect(cx-r, cy-r, r*2, r*2, 3);
+  }else if(name==="中强"){
+    gridCtx.beginPath();
+    gridCtx.moveTo(cx, cy-r);
+    gridCtx.lineTo(cx-r, cy+r);
+    gridCtx.lineTo(cx+r, cy+r);
+    gridCtx.closePath();
+    gridCtx.stroke();
+    if(active) gridCtx.fill();
+  }else if(name==="弱"){
+    gridCtx.beginPath();
+    gridCtx.arc(cx,cy,r,0,Math.PI*2);
+    gridCtx.stroke();
+    if(active) gridCtx.fill();
+  }else{
+    gridCtx.beginPath();
+    gridCtx.arc(cx,cy,r,0,Math.PI*2);
+    gridCtx.stroke();
+    gridCtx.beginPath();
+    gridCtx.moveTo(cx-r, cy+r);
+    gridCtx.lineTo(cx+r, cy-r);
+    gridCtx.stroke();
+  }
+
+  gridCtx.restore();
+}
+function drawRoundedRect(x,y,w,h,r){
+  gridCtx.beginPath();
+  gridCtx.moveTo(x+r,y);
+  gridCtx.arcTo(x+w,y,x+w,y+h,r);
+  gridCtx.arcTo(x+w,y+h,x,y+h,r);
+  gridCtx.arcTo(x,y+h,x,y,r);
+  gridCtx.arcTo(x,y,x+w,y,r);
+  gridCtx.closePath();
+  gridCtx.stroke();
+}
+
+function drawJp(){
+  const W=jpCanvas.width,H=jpCanvas.height;
+  jpCtx.clearRect(0,0,W,H);
+
+  const grad=jpCtx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,"#0b1020");
+  grad.addColorStop(1,"#070a12");
+  jpCtx.fillStyle=grad;
+  jpCtx.fillRect(0,0,W,H);
+
+  jpCtx.strokeStyle="rgba(255,255,255,.10)";
+  jpCtx.lineWidth=2;
+  jpCtx.strokeRect(10,10,W-20,H-20);
+
+  const left=18, right=W-18;
+  const beatW=(right-left)/metroState.beats;
+  const yX=96;
+
+  jpCtx.strokeStyle="rgba(255,255,255,.08)";
+  jpCtx.lineWidth=2;
+  for(let b=0;b<=metroState.beats;b++){
+    const x=left+b*beatW;
+    jpCtx.beginPath();
+    jpCtx.moveTo(x,18);
+    jpCtx.lineTo(x,H-18);
+    jpCtx.stroke();
+  }
+
+  const bpm=metroState.bpm;
+  const t=(bpm-40)/(250-40);
+  const rr=Math.round(30+t*(220-30));
+  const gg=Math.round(200+t*(60-200));
+  const bb=Math.round(80+t*(60-80));
+  const pointerColor=`rgb(${rr},${gg},${bb})`;
+
+  const px = (() => {
+    const beat = metroState.playingBeat;
+    const n = metroState.subdiv[beat] || 4;
+    const sub = metroState.playingSub;
+    const effN = n === 1 ? 2 : n;
+    return left + beat * beatW + (sub + 0.5) * (beatW / (effN === 1 ? 2 : effN));
+  })();
+
+  jpCtx.save();
+  jpCtx.globalAlpha=0.22;
+  jpCtx.strokeStyle=pointerColor;
+  jpCtx.lineWidth=10;
+  jpCtx.beginPath();
+  jpCtx.moveTo(px,22);
+  jpCtx.lineTo(px,H-22);
+  jpCtx.stroke();
+  jpCtx.restore();
+
+  jpCtx.strokeStyle=pointerColor;
+  jpCtx.lineWidth=4;
+  jpCtx.beginPath();
+  jpCtx.moveTo(px,18);
+  jpCtx.lineTo(px,H-18);
+  jpCtx.stroke();
+
+  for(let beat=0; beat<metroState.beats; beat++){
+    const n = metroState.subdiv[beat] || 4;
+    const x1 = left + beat * beatW;
+    const effN = n === 1 ? 2 : n;
+    const slotsToDraw = n === 1 ? 1 : n;
+
+    for(let s=0; s<slotsToDraw; s++){
+      const x = x1 + (s + 0.5) * (beatW / effN);
+      const acc = (metroState.pattern[beat] ? metroState.pattern[beat][s] : "静音");
+      const radius = 8;
+
+      if(acc === "静音"){
+        jpCtx.strokeStyle="#888888";
+        jpCtx.lineWidth=1.5;
+        jpCtx.beginPath();
+        jpCtx.arc(x,yX,radius,0,Math.PI*2);
+        jpCtx.stroke();
+      }else{
+        jpCtx.fillStyle="#FF9800";
+        jpCtx.beginPath();
+        jpCtx.arc(x,yX,radius,0,Math.PI*2);
+        jpCtx.fill();
+      }
+
+      if(acc === "强"){
+        jpCtx.fillStyle="#4a6fff";
+        jpCtx.font="18px ui-monospace, monospace";
+        jpCtx.fillText(">", x, 58);
+      }
+    }
+  }
+}
+
+/* =========================
+   音频
+   ========================= */
+function ensureAudio(){
+  if(!metroState.audioContext){
+    metroState.audioContext = new (window.AudioContext || window.webkitAudioContext)({latencyHint:"interactive"});
+  }
+}
+function makeClickBuffer(freq, ms){
+  if(freq<=0 || ms<=0) return null;
+  ensureAudio();
+  const sr=metroState.audioContext.sampleRate;
+  const n=Math.max(1, Math.floor(sr*(ms/1000)));
+  const buf=metroState.audioContext.createBuffer(1,n,sr);
+  const d=buf.getChannelData(0);
+  const attack=Math.max(1, Math.floor(0.002*sr));
+  const decay=Math.max(1, Math.floor(0.020*sr));
+  const dEnd=Math.min(decay,n);
+  const w=2*Math.PI*freq/sr;
+  let ph=0;
+  for(let i=0;i<n;i++){
+    let env;
+    if(i<attack) env=i/attack;
+    else{
+      const tt=(i-attack)/Math.max(1,(dEnd-attack));
+      env=(i<dEnd)?Math.exp(-6*tt):0;
+    }
+    d[i]=Math.sin(ph)*env*0.45;
+    ph+=w;
+  }
+  return buf;
+}
+function playClick(freq, ms, time){
+  if(freq<=0 || ms<=0 || !metroState.running) return;
+  ensureAudio();
+  const buf=makeClickBuffer(freq, ms);
+  if(!buf) return;
+  const src=metroState.audioContext.createBufferSource();
+  src.buffer=buf;
+  src.connect(metroState.audioContext.destination);
+  src.start(time);
+}
+
+/* =========================
+   大字模式
+   ========================= */
+function setBigBtnUI(){
+  if(bigBeatMode){
+    bigBtn.classList.add("active");
+    bigBtn.innerHTML = `
+      <svg viewBox="0 0 24 24"><path d="M4 19h4l2-6h4l2 6h4L14 5h-4L4 19zm7.3-9L12 7.7 12.7 10h-1.4z"/></svg>
+      大字开
+    `;
+  }else{
+    bigBtn.classList.remove("active");
+    bigBtn.innerHTML = `
+      <svg viewBox="0 0 24 24"><path d="M4 19h4l2-6h4l2 6h4L14 5h-4L4 19zm7.3-9L12 7.7 12.7 10h-1.4z"/></svg>
+      大字
+    `;
+    hideBigBeat();
+  }
+}
+function toggleBigBeatMode(){
+  bigBeatMode = !bigBeatMode;
+  setBigBtnUI();
+}
+function showBigBeat(beatNumber){
+  if(!bigBeatMode) return;
+  bigBeatText.textContent = (beatNumber + 1);
+  bigBeat.style.display="flex";
+  setTimeout(hideBigBeat, 500);
+}
+function hideBigBeat(){ bigBeat.style.display="none"; }
+
+/* =========================
+   播放控制
+   ========================= */
+function updatePlayButton(isPlaying){
+  if(isPlaying){
+    playIcon.innerHTML = '<path d="M7 6h4v12H7zM13 6h4v12h-4z"/>';
+    playText.textContent="暂停";
+    playBtn.classList.remove("btn-ghost");
+    playBtn.style.borderColor = "transparent";
+    playBtn.style.background = "#FF9800";
+    playBtn.style.color = "#fff";
+  }else{
+    playIcon.innerHTML = '<path d="M8 5v14l12-7z"/>';
+    playText.textContent="播放";
+    playBtn.style.background = "rgba(255,255,255,0.05)";
+    playBtn.style.color = "var(--text)";
+    playBtn.style.borderColor = "var(--border)";
+  }
+}
+
+function playMetronome(){
+  ensureAudio();
+  if(metroState.running) return;
+  metroState.running=true;
+  metroState.beatStartTime=metroState.audioContext.currentTime;
+  metroState.nextTickTime=metroState.beatStartTime;
+  updatePlayButton(true);
+  metroStatus.textContent="播放中";
+  scheduleNextTick();
+}
+function pauseMetronome(){
+  if(!metroState.running) return;
+  metroState.running=false;
+  if(metroState.timer){
+    clearTimeout(metroState.timer);
+    metroState.timer=null;
+  }
+  updatePlayButton(false);
+  metroStatus.textContent="已暂停";
+  hideBigBeat();
+}
+function resetMetronome(){
+  pauseMetronome();
+  metroState.currentBeat=0;
+  metroState.currentSub=0;
+  metroState.playingBeat=0;
+  metroState.playingSub=0;
+  metroState.flashUntil=0;
+  hideBigBeat();
+  drawGrid();
+  drawJp();
+  metroStatus.textContent="就绪";
+}
+
+function scheduleNextTick(){
+  if(!metroState.running) return;
+
+  const now = metroState.audioContext.currentTime;
+  const lookAhead = 0.12;
+
+  while(metroState.nextTickTime < now + lookAhead){
+    const b = metroState.currentBeat;
+    const s = metroState.currentSub;
+    const n = metroState.subdiv[b] || 4;
+    const acc = (metroState.pattern[b] && metroState.pattern[b][s]) ? metroState.pattern[b][s] : "静音";
+
+    if(s === 0){
+      playClick(metroSound.freq, metroSound.ms, metroState.nextTickTime);
+    }
+    if(acc !== "静音"){
+      const cfg = sounds[acc] || {freq:0, ms:0};
+      playClick(cfg.freq, cfg.ms, metroState.nextTickTime);
+    }
+
+    const visualDelay = Math.max(0, metroState.nextTickTime - now);
+
+    setTimeout(() => {
+      metroState.playingBeat = b;
+      metroState.playingSub = s;
+      metroState.flashUntil = performance.now() + 90;
+
+      // ✅ beat 外框闪烁（跟随 beat，而不是细分）
+      if(s === 0) {
+        highlightCardBeat(b);
+        showBigBeat(b);
+      }
+
+      drawGrid();
+      drawJp();
+    }, visualDelay * 1000);
+
+    // 更新下一位置
+    setTimeout(() => {
+      let nextBeat = b;
+      let nextSub = s + 1;
+      if(nextSub >= n){
+        nextSub = 0;
+        nextBeat = (nextBeat + 1) % metroState.beats;
+        if(nextBeat === 0) metroState.beatStartTime = metroState.nextTickTime;
+      }
+      metroState.currentBeat = nextBeat;
+      metroState.currentSub = nextSub;
+    }, visualDelay * 1000 + 5);
+
+    const beatSec = 60 / metroState.bpm;
+    metroState.nextTickTime += beatSec / n;
+  }
+
+  metroState.timer = setTimeout(scheduleNextTick, 16);
+}
+
+function setBpm(value){
+  const clamped = Math.max(40, Math.min(250, parseInt(value,10) || 60));
+  metroState.bpm = clamped;
+  bpmInput.value = clamped;
+}
+
+/* =========================
+   卡片渲染
+   ========================= */
+function updateDifficultyOptions(){
+  difficultySelect.innerHTML="";
+  const diffs = difficultyDescriptions[cardState.currentType] || [];
+  diffs.forEach(diff => {
+    const opt = document.createElement("option");
+    opt.value = diff.level;
+    opt.textContent = `难度${diff.level}: ${diff.name}`;
+    if(cardState.currentType === "mix") opt.classList.add("mix-ultimate");
+    if(diff.level === cardState.currentDifficulty) opt.selected = true;
+    difficultySelect.appendChild(opt);
+  });
+}
+
+function createCard(card, index){
+  const slot = document.createElement("div");
+  slot.className="card-slot";
+  slot.dataset.index=index;
+
+  const img = document.createElement("img");
+  img.src = `${card.id}.svg`;
+  img.alt = card.id;
+  img.onerror = function(){
+    this.style.display="none";
+    const fallback = document.createElement("div");
+    fallback.className="card-fallback";
+    fallback.textContent=card.id;
+    fallback.style.display="flex";
+    slot.appendChild(fallback);
+  };
+
+  slot.appendChild(img);
+  slot.addEventListener("click", () => showCardDetails(index));
+  return slot;
+}
+
+function updateCardsDisplay(){
+  countDisplay.textContent = String(cardState.count);
+
+  cardsContainer.innerHTML="";
+  const key = `${cardState.currentType}_${cardState.currentDifficulty}`;
+  const pool = cardsByDifficulty[key] || [];
+  if(pool.length === 0){
+    cardsContainer.innerHTML = `<div style="color:var(--muted);text-align:center;padding:28px;">暂无卡片数据</div>`;
+    cardState.currentCards=[];
+    return;
+  }
+
+  cardState.currentCards = [];
+  for(let i=0;i<cardState.count;i++){
+    const randomIndex = Math.floor(Math.random()*pool.length);
+    cardState.currentCards.push(pool[randomIndex]);
+  }
+
+  cardState.currentCards.forEach((card, idx) => {
+    cardsContainer.appendChild(createCard(card, idx));
+  });
+
+  infoPlaceholder.style.display="block";
+  cardDetails.classList.remove("active");
+  cardState.selectedCard=null;
+
+  syncMetronomeToCards(cardState.currentCards);
+}
+
+function showCardDetails(index){
+  if(index < 0 || index >= cardState.currentCards.length) return;
+  const card = cardState.currentCards[index];
+  cardState.selectedCard = card;
+
+  detailName.textContent = card.name;
+  detailPattern.textContent = `节奏型: ${card.pattern}`;
+  detailDesc.textContent = card.desc;
+
+  infoPlaceholder.style.display="none";
+  cardDetails.classList.add("active");
+}
+
+function generateQuiz(){
+  cardState.currentType = cardType.value;
+  cardState.currentDifficulty = parseInt(difficultySelect.value,10) || 1;
+  updateCardsDisplay();
+}
+
+/* =========================
+   事件绑定
+   ========================= */
+countMinus.addEventListener("click", () => {
+  cardState.count = Math.max(1, cardState.count - 1);
+  updateCardsDisplay();
+});
+countPlus.addEventListener("click", () => {
+  cardState.count = Math.min(8, cardState.count + 1);
+  updateCardsDisplay();
+});
+
+cardType.addEventListener("change", () => {
+  cardState.currentType = cardType.value;
+  cardState.currentDifficulty = 1;
+  updateDifficultyOptions();
+});
+
+difficultySelect.addEventListener("change", () => {
+  cardState.currentDifficulty = parseInt(difficultySelect.value,10) || 1;
+});
+
+startQuizBtn.addEventListener("click", generateQuiz);
+
+playBtn.addEventListener("click", () => {
+  if(metroState.running) pauseMetronome();
+  else playMetronome();
+});
+
+bpmMinus.addEventListener("click", () => {
+  setBpm(metroState.bpm - 1);
+  if(metroState.running){ pauseMetronome(); playMetronome(); }
+});
+bpmPlus.addEventListener("click", () => {
+  setBpm(metroState.bpm + 1);
+  if(metroState.running){ pauseMetronome(); playMetronome(); }
+});
+bpmInput.addEventListener("change", () => {
+  setBpm(bpmInput.value);
+  if(metroState.running){ pauseMetronome(); playMetronome(); }
+});
+resetBtn.addEventListener("click", resetMetronome);
+bigBtn.addEventListener("click", toggleBigBeatMode);
+
+/* 节拍器折叠切换（默认折叠） */
+metroToggle.addEventListener("click", () => {
+  metronomeShell.classList.toggle("open");
+});
+
+/* =========================
+   初始化
+   ========================= */
+function init(){
+  // 默认：卡片 4 张、类型 4、难度 3
+  cardState.count = 4;
+  countDisplay.textContent = "4";
+
+  updateDifficultyOptions();
+  updateCardsDisplay();
+
+  // 默认 BPM
+  setBpm(60);
+
+  // 大字默认开
+  bigBeatMode = true;
+  setBigBtnUI();
+  bigBeat.style.display="none";
+
+  // 节拍器内容默认折叠（不加 open）
+  metronomeShell.classList.remove("open");
+
+  drawGrid();
+  drawJp();
+}
+document.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>
