@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>时值细分练习器（卡片版）</title>
+<style>
+  :root{
+    --bg:#0b0d12;
+    --ink:#e9ecf3;
+    --mut:#9aa3b6;
+    --line:rgba(255,255,255,.10);
+    --shadow:0 12px 40px rgba(0,0,0,.35);
+    /* 固定4列 2行；卡片更大一点 */
+    --cardW:min(24.75vw, 250px);
+    --cardH:180px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:radial-gradient(1200px 600px at 30% -20%, #141a2d 0%, var(--bg) 55%);
+    color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,"Microsoft YaHei",sans-serif;
+  }
+  .wrap{max-width:1200px;margin:0 auto;padding:10px}
+
+header{
+  margin-bottom:12px;
+  text-align:center;
+  position:relative;
+}
+h1{font-size:20px;margin-bottom:6px}
+.subtitle{color:var(--muted);font-size:13px}
+
+.home-link{
+  position:absolute;left:10px;top:0;
+  text-decoration:none;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:36px;height:36px;
+  background:var(--card-bg);
+  border-radius:999px;
+  border:1px solid #ffffff);
+  transition:all .2s ease;
+}
+.home-link:hover{background:var(--accent);border-color:var(--accent);transform:scale(1.04)}
+.home-link svg{width:18px;height:18px;fill:#ffffff}
+
+  .topBar{
+    display:flex;align-items:center;gap:2px;flex-wrap:wrap;
+    padding:2px 12px;border-radius:16px;
+    background:linear-gradient(180deg,#121830,#0e1220);
+    border:1px solid var(--line);
+    box-shadow:var(--shadow);
+  }
+  .pill{
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:8px 12px;
+    color:var(--mut);
+    font-weight:900;
+    background:linear-gradient(180deg,#10172b,#0d1220);
+    white-space:nowrap;
+  }
+  .sp{flex:1}
+
+  button{
+    cursor:pointer;
+    border:1px solid var(--line);
+    background:linear-gradient(180deg,#1a2240,#11182c);
+    color:var(--ink);
+    border-radius:14px;
+    font-weight:900;
+    transition:transform .05s ease, border-color .15s ease, background .15s ease;
+    user-select:none;
+    height:40px;
+    padding:0 14px;
+  }
+  button:hover{border-color:#3a65ff}
+  button:active{transform:translateY(1px)}
+  button.primary{
+    border-color:#2b4db6;
+    background:linear-gradient(180deg,#203a8d,#141f4f);
+  }
+  button.primary:hover{border-color:#3a65ff}
+
+  input[type="number"]{
+    width:92px;height:40px;
+    background:#0a0f1c;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:12px;
+    color:var(--ink);
+    padding:8px 10px;
+    outline:none;
+    font-weight:850;
+  }
+
+  select{
+    height:40px;
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,.10);
+    background:#0a0f1c;
+    color:var(--ink);
+    font-weight:850;
+    padding:0 10px;
+    outline:none;
+  }
+
+  /* ===== 卡片网格：固定 4列，2行；无缝 ===== */
+  .cardsOuter{ margin-top:10px; display:flex; justify-content:center; }
+  .cards{
+    display:grid;
+    grid-template-columns:repeat(4, var(--cardW));
+    grid-auto-rows:var(--cardH);
+    gap:0;
+    align-items:stretch;
+    justify-items:stretch;
+    user-select:none;
+  }
+
+  .card{
+    border:1px solid var(--line);
+    background:linear-gradient(180deg,#121830,#0e1220);
+    box-shadow:none;
+    border-radius:0;
+    display:flex;
+    flex-direction:column;
+    padding:12px;
+    overflow:hidden;
+    position:relative;
+  }
+  .card::after{
+    content:"";
+    position:absolute; inset:0;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+    pointer-events:none;
+  }
+
+  .card.tl{border-top-left-radius:16px}
+  .card.tr{border-top-right-radius:16px}
+  .card.bl{border-bottom-left-radius:16px}
+  .card.br{border-bottom-right-radius:16px}
+
+  .card.active{ outline:2px solid #3a65ff; outline-offset:-2px; }
+  .card.dragging{ opacity:.55; }
+
+  .cardTitle{
+    display:flex;align-items:center;justify-content:space-between;
+    font-weight:950;font-size:16px;color:rgba(233,236,243,.92);
+    margin-bottom:10px;
+  }
+  .cardTitle .tag{
+    font-size:5px;color:rgba(233,236,243,.70);
+    padding:3px 8px;border:1px solid rgba(255,255,255,.10);
+    border-radius:999px;
+    background:rgba(255,255,255,.03);
+  }
+
+  /* ✅ 卡片只剩一组：连音 - N + */
+  .singleRow{
+    margin-top:auto;
+    display:flex;
+    justify-content:center;
+  }
+  .miniGroup{
+    align-items:center;gap:5px;
+    border:1px solid rgba(255,255,255,.10);
+    background:rgba(0,0,0,.18);
+    border-radius:16px;
+    padding:2px 2px;
+  }
+  .miniLabel{
+    font-size:14px;
+    font-weight:950;
+    color:rgba(154,163,182,.95);
+    white-space:nowrap;
+  }
+  .miniBtn{
+    width:34px;height:34px;
+    border-radius:14px;
+    padding:0;
+    display:grid;
+    place-items:center;
+    font-weight:1000;
+    border:1px solid rgba(255,255,255,.12);
+    background:linear-gradient(180deg,#172145,#0f162b);
+  }
+  .miniBtn:active{transform:translateY(1px)}
+  .miniVal{
+    min-width:34px;
+    text-align:center;
+    font-weight:1000;
+    font-size:18px;
+    color:rgba(233,236,243,.95);
+  }
+
+  /* ===== 简谱画布 + 大字 ===== */
+  .stage{ margin-top:10px; position:relative; }
+  canvas{
+    display:block;width:100%;
+    height:auto;
+    border-radius:16px;
+    border:1px solid var(--line);
+    background:linear-gradient(180deg,#0a0f1a,#070a12);
+    box-shadow:var(--shadow);
+  }
+  .bigBeat{
+    position:absolute;
+    left:0; right:0;
+    top:8px;
+    display:flex;
+    justify-content:center;
+    pointer-events:none;
+    z-index:20;
+  }
+  .bigBeat .txt{
+    font-weight:1000;
+    font-size:min(60vw, 260px);
+    letter-spacing:2px;
+    color:rgba(233,236,243,.14);
+    text-shadow:0 10px 40px rgba(0,0,0,.35);
+    transform:translateY(-250px);
+  }
+
+  .bottomBar{
+    margin-top:10px;
+    display:flex;gap:2px;align-items:center;flex-wrap:wrap;
+    padding:10px 12px;border-radius:16px;
+    background:linear-gradient(180deg,#121830,#0e1220);
+    border:1px solid var(--line);
+    box-shadow:var(--shadow);
+  }
+  #runState{
+   display:none;
+}
+
+  @media (max-width:420px){
+    .wrap{padding:8px}
+    button{height:38px}
+    input[type="number"]{height:38px}
+    select{height:38px}
+    .miniBtn{width:32px;height:32px}
+    .miniVal{font-size:17px}
+  }
+</style>
+</head>
+
+<body>
+<header>
+  <a href="index.html" class="home-link" title="返回首页">
+    <svg viewBox="0 0 24 24" fill="#ffffff"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>
+  </a>
+  <h1>时值转换练习</h1>
+  <p class="subtitle">一拍内任意1-8连音练习</p>
+</header>
+<div class="wrap">
+
+  <div class="topBar">
+    <select id="boxCount">
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5">5</option>
+      <option value="6">6</option>
+      <option value="7">7</option>
+      <option value="8" selected>8</option>
+    </select>
+
+    <!-- ✅ 全局拍数 / 全局遍数（放在顶部） -->
+   
+    <input id="globalBeats" type="number" min="1" max="8" value="4" />
+    <span class="pill">拍</span>   
+    <input id="globalReps" type="number" min="1" max="8" value="1" />
+    <span class="pill">遍</span>
+    <select id="globalStick">
+      <option value="right" selected>右利手</option>
+      <option value="left">左利手</option>
+      <option value="symR">单击右起</option>
+      <option value="symL">单击左起</option>
+    </select>
+    <span class="pill" id="activeInfo">1</span>
+    <span class="pill" id="loopInfo">第 1 / 1 遍</span>
+  </div>
+
+  <div class="cardsOuter">
+    <div class="cards" id="cards"></div>
+  </div>
+
+  <div class="stage">
+    <div class="bigBeat" id="bigBeat"><div class="txt" id="bigBeatTxt">1</div></div>
+    <canvas id="jp" width="980" height="240"></canvas>
+  </div>
+
+  <div class="bottomBar">
+    <span class="pill" id="runState">就绪</span>
+    <button class="primary" id="playToggle">播放</button>
+    <button id="resetBtn">复位</button>
+    <input id="bpm" type="number" min="40" max="250" value="60" />
+    <span class="pill" id="bpmPill">60</span>
+    <button id="saveBtn">保存</button>
+    <div class="sp"></div>
+    <span class="pill">提示：暂停时可拖动卡片排序</span>
+  </div>
+
+</div>
+
+<script id="__SAVED_STATE__" type="application/json"></script>
+
+<script>
+(() => {
+  const BPM_MIN=40, BPM_MAX=250;
+
+  const boxCountSel=document.getElementById("boxCount");
+  const globalStickSel=document.getElementById("globalStick");
+  const globalBeatsInp=document.getElementById("globalBeats");
+  const globalRepsInp=document.getElementById("globalReps");
+
+  const cardsEl=document.getElementById("cards");
+  const activeInfo=document.getElementById("activeInfo");
+  const loopInfo=document.getElementById("loopInfo");
+  const saveBtn=document.getElementById("saveBtn");
+
+  const jp=document.getElementById("jp");
+  const j=jp.getContext("2d");
+  const bigBeatTxt=document.getElementById("bigBeatTxt");
+
+  const playToggle=document.getElementById("playToggle");
+  const resetBtn=document.getElementById("resetBtn");
+  const bpmInp=document.getElementById("bpm");
+  const bpmPill=document.getElementById("bpmPill");
+  const runState=document.getElementById("runState");
+
+  function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v|0)); }
+  function getBpm(){ return clamp(+bpmInp.value, BPM_MIN, BPM_MAX); }
+  function getGlobalBeats(){ return clamp(+globalBeatsInp.value, 1, 8); }
+  function getGlobalReps(){ return clamp(+globalRepsInp.value, 1, 8); }
+
+  // ✅ 每个框只需要独立记录 sub（连音）
+  let boxes = []; // [{sub}]
+  let boxCount = 8;
+  let activeIdx = 0;
+
+  // 全局手法
+  let stickMode = globalStickSel.value; // right | left | symR | symL
+
+  // ===== 音频（细分 click + 每拍第1细分额外 metro click）=====
+  let audio=null;
+  let gMaster=null, gSub=null, gMetro=null;
+  const bufCache=new Map();
+  const subCfg = {freq:1200, ms:10};
+  const metroCfg= {freq:2500, ms:10};
+
+  function ensureAudio(){
+    if(audio) return;
+    audio=new (window.AudioContext||window.webkitAudioContext)({latencyHint:"interactive"});
+    gMaster=audio.createGain();
+    gSub=audio.createGain();
+    gMetro=audio.createGain();
+    gMaster.gain.value=0.90;
+    gSub.gain.value=0.70;
+    gMetro.gain.value=0.75;
+    gSub.connect(gMaster);
+    gMetro.connect(gMaster);
+    gMaster.connect(audio.destination);
+  }
+
+  function makeClickBuf(freq, ms){
+    if(freq<=0 || ms<=0) return null;
+    ensureAudio();
+    const sr=audio.sampleRate;
+    const n=Math.max(1,Math.floor(sr*(ms/1000)));
+    const buf=audio.createBuffer(1,n,sr);
+    const d=buf.getChannelData(0);
+    const attack=Math.max(1,Math.floor(0.002*sr));
+    const decay=Math.max(1,Math.floor(0.020*sr));
+    const dEnd=Math.min(decay,n);
+    const w=2*Math.PI*freq/sr;
+    let ph=0;
+    for(let i=0;i<n;i++){
+      let env;
+      if(i<attack) env=i/attack;
+      else{
+        const tt=(i-attack)/Math.max(1,(dEnd-attack));
+        env=(i<dEnd)?Math.exp(-6*tt):0;
+      }
+      d[i]=Math.sin(ph)*env*0.45;
+      ph+=w;
+    }
+    return buf;
+  }
+  function getBuf(freq,ms){
+    const k=`${freq},${ms}`;
+    if(bufCache.has(k)) return bufCache.get(k);
+    const b=makeClickBuf(freq,ms);
+    bufCache.set(k,b);
+    return b;
+  }
+  function playClickAt(t, freq, ms, dest){
+    if(freq<=0||ms<=0) return;
+    ensureAudio();
+    const b=getBuf(freq,ms);
+    if(!b) return;
+    const src=audio.createBufferSource();
+    src.buffer=b;
+    src.connect(dest);
+    src.start(t);
+  }
+
+  // ===== 简谱：横线层数（按 n）=====
+  function beamLevel(n){
+    if(n===1) return 0;
+    if(n===2 || n===3) return 1;
+    if(n>=4 && n<=7) return 2;
+    return 3; // n===8
+  }
+
+  // ===== 手法 =====
+  const swapRL = (s)=> s.replace(/R/g,"x").replace(/L/g,"R").replace(/x/g,"L");
+
+  function rightHandSeq(n){
+    const map = {
+      1:"R",
+      2:"RL",
+      3:"RLL",
+      4:"RLRL",
+      5:"RLRLL",
+      6:"RLRLRL",
+      7:"RLRLRLL",
+      8:"RLRLRLRL",
+    };
+    return map[n] || "R";
+  }
+
+  // ✅ 单击右起/左起：全局交替（globalIndex % 2）
+  function stickCharAt(globalIndex){
+    if(stickMode==="symR"){
+      return (globalIndex % 2 === 0) ? "R" : "L";
+    }
+    if(stickMode==="symL"){
+      return (globalIndex % 2 === 0) ? "L" : "R";
+    }
+    return "R";
+  }
+
+  // ✅ 右利手/左利手：保持原“1-8连音规则”输出（拍内模式）
+  function stickSeqForSub(sub){
+    if(stickMode==="right"){
+      return rightHandSeq(sub);
+    }
+    if(stickMode==="left"){
+      return swapRL(rightHandSeq(sub));
+    }
+    // symR/symL 拍内兜底（绘制时优先 stickCharAt）
+    let out="";
+    for(let i=0;i<sub;i++){
+      out += (stickMode==="symR")
+        ? ((i%2===0) ? "R" : "L")
+        : ((i%2===0) ? "L" : "R");
+    }
+    return out;
+  }
+
+  // ===== 卡片四角圆角 =====
+  function cornerClass(i){
+    const classes=[];
+    if(i===0) classes.push("tl");
+    if(i===3) classes.push("tr");
+    if(i===4) classes.push("bl");
+    if(i===7) classes.push("br");
+    return classes.join(" ");
+  }
+
+  function renderCards(){
+    cardsEl.innerHTML="";
+
+    for(let i=0;i<boxCount;i++){
+      const b=boxes[i];
+
+      const card=document.createElement("div");
+      card.className=`card ${cornerClass(i)} ${i===activeIdx?"active":""}`;
+      card.dataset.idx=i;
+      card.draggable = !running;
+
+      const title=document.createElement("div");
+      title.className="cardTitle";
+      title.innerHTML = `<span>${b.sub}连音</span><span class="tag">${i===activeIdx?"^":(!running?"=":"")}</span>`;
+      card.appendChild(title);
+
+      // ✅ 只剩连音：- N +
+      const row=document.createElement("div");
+      row.className="singleRow";
+      row.appendChild(makeMiniGroup("", b.sub, () => stepSub(i,-1), () => stepSub(i,+1)));
+      card.appendChild(row);
+
+      card.addEventListener("click",(e)=>{
+        const t=e.target;
+        if(t.classList?.contains("miniBtn")) return;
+        setActive(i);
+      });
+
+      // 拖拽排序（暂停时）
+      card.addEventListener("dragstart",(e)=>{
+        if(running) { e.preventDefault(); return; }
+        card.classList.add("dragging");
+        e.dataTransfer.setData("text/plain", String(i));
+        e.dataTransfer.effectAllowed="move";
+      });
+      card.addEventListener("dragend",()=>card.classList.remove("dragging"));
+      card.addEventListener("dragover",(e)=>{
+        if(running) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect="move";
+      });
+      card.addEventListener("drop",(e)=>{
+        if(running) return;
+        e.preventDefault();
+        const from=+e.dataTransfer.getData("text/plain");
+        const to=+card.dataset.idx;
+        if(Number.isNaN(from) || Number.isNaN(to) || from===to) return;
+        moveBox(from,to);
+      });
+
+      cardsEl.appendChild(card);
+    }
+
+    activeInfo.textContent = String(activeIdx+1);
+    updateLoopInfo();
+  }
+
+  function makeMiniGroup(label, value, onMinus, onPlus){
+    const g=document.createElement("div");
+    g.className="miniGroup";
+
+    const lab=document.createElement("div");
+    lab.className="miniLabel";
+    lab.textContent=label;
+    g.appendChild(lab);
+
+    const minus=document.createElement("button");
+    minus.className="miniBtn";
+    minus.textContent="-";
+    minus.addEventListener("click",(e)=>{ e.stopPropagation(); onMinus(); });
+    g.appendChild(minus);
+
+    const val=document.createElement("div");
+    val.className="miniVal";
+    val.textContent=String(value);
+    g.appendChild(val);
+
+    const plus=document.createElement("button");
+    plus.className="miniBtn";
+    plus.textContent="+";
+    plus.addEventListener("click",(e)=>{ e.stopPropagation(); onPlus(); });
+    g.appendChild(plus);
+
+    return g;
+  }
+
+  function stepSub(i, delta){
+    pause();
+    boxes[i].sub = clamp(boxes[i].sub + delta, 1, 8);
+    if(i===activeIdx) resetPointer(true);
+    renderCards();
+    drawJp();
+  }
+
+  function moveBox(from, to){
+    pause();
+    const it=boxes.splice(from,1)[0];
+    boxes.splice(to,0,it);
+
+    if(activeIdx===from) activeIdx=to;
+    else if(from<activeIdx && to>=activeIdx) activeIdx--;
+    else if(from>activeIdx && to<=activeIdx) activeIdx++;
+
+    if(playBoxIdx===from) playBoxIdx=to;
+    else if(from<playBoxIdx && to>=playBoxIdx) playBoxIdx--;
+    else if(from>playBoxIdx && to<=playBoxIdx) playBoxIdx++;
+
+    renderCards();
+    drawJp();
+  }
+
+  function setActive(i){
+    activeIdx = Math.max(0, Math.min(boxCount-1, i));
+    playBoxIdx = activeIdx;
+    resetPointer(true);
+    renderCards();
+    drawJp();
+  }
+
+  // ===== 简谱绘制（beats/reps 全局；sub 每框）=====
+  function drawJp(){
+    const W=jp.width, H=jp.height;
+    j.clearRect(0,0,W,H);
+
+    const grad=j.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0,"#0b1020"); grad.addColorStop(1,"#070a12");
+    j.fillStyle=grad; j.fillRect(0,0,W,H);
+
+    j.strokeStyle="rgba(255,255,255,.10)";
+    j.lineWidth=2;
+    j.strokeRect(10,10,W-20,H-20);
+
+    const beats=getGlobalBeats();
+    const sub=boxes[activeIdx]?.sub ?? 1;
+
+    const left=18, right=W-18;
+    const top=22, bottom=H-22;
+    const beatW=(right-left)/beats;
+
+    const px = left + (uiBeat + (uiSub+0.5)/sub) * beatW;
+    j.save();
+    j.globalAlpha=0.22;
+    j.strokeStyle="rgba(58,101,255,1)";
+    j.lineWidth=10;
+    j.beginPath(); j.moveTo(px, top); j.lineTo(px, bottom); j.stroke();
+    j.restore();
+    j.strokeStyle="rgba(58,101,255,1)";
+    j.lineWidth=3;
+    j.beginPath(); j.moveTo(px, top); j.lineTo(px, bottom); j.stroke();
+
+    j.strokeStyle="rgba(255,255,255,.08)";
+    j.lineWidth=2;
+    for(let b=0;b<=beats;b++){
+      const x=left+b*beatW;
+      j.beginPath(); j.moveTo(x, top); j.lineTo(x, bottom); j.stroke();
+    }
+
+    const yTopNum = H*0.26;
+    const yStick  = H*0.60;
+    const yBeamBase = H*0.78;
+
+    const seqRightLeft = stickSeqForSub(sub).split("");
+
+    for(let b=0;b<beats;b++){
+      const x1=left+b*beatW, x2=x1+beatW;
+
+      for(let s=0;s<sub;s++){
+        const x = x1 + (s+0.5)*(beatW/sub);
+        const topNum = (s===0) ? String(b+1) : String(s+1);
+
+        j.fillStyle="rgba(233,236,243,.65)";
+        j.font="14px system-ui";
+        j.textAlign="center";
+        j.textBaseline="middle";
+        j.fillText(topNum, x, yTopNum);
+
+        const globalIndex = b * sub + s;
+        let ch;
+        if(stickMode==="symR" || stickMode==="symL"){
+          ch = stickCharAt(globalIndex);
+        }else{
+          ch = seqRightLeft[s] || "-";
+        }
+
+        j.fillStyle="#e8eaf0";
+        j.font="24px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+        j.textAlign="center";
+        j.textBaseline="middle";
+        j.fillText(ch, x, yStick);
+      }
+
+      const lvl = beamLevel(sub);
+      if(lvl>0){
+        const pad = Math.max(12, beatW*0.10);
+        j.strokeStyle="#e8eaf0";
+        j.lineWidth=3;
+        for(let k=0;k<lvl;k++){
+          const yy = yBeamBase + k*7;
+          j.beginPath();
+          j.moveTo(x1+pad, yy);
+          j.lineTo(x2-pad, yy);
+          j.stroke();
+        }
+      }
+    }
+  }
+
+  // ===== 播放（框→遍→下一框循环；beats/reps 全局；sub 每框）=====
+  const LOOKAHEAD=0.08, TICK=0.016;
+  let timer=null;
+  let running=false;
+
+  let playBoxIdx=0;
+  let repNow=1;
+
+  let uiBeat=0, uiSub=0;
+  let playBeat=0, playSub=0;
+  let beatStartT=0, nextTickT=0;
+  let pausedAtT=null;
+
+  function beatSec(){ return 60/getBpm(); }
+  function loopOn(){ if(timer) clearInterval(timer); timer=setInterval(scheduler, TICK*1000); }
+  function loopOff(){ if(timer){clearInterval(timer); timer=null;} }
+
+  function setRunState(t){ runState.textContent=t; }
+  function syncPlayBtn(){
+    playToggle.textContent = running ? "暂停" : "播放";
+    setRunState(running ? "播放" : "就绪");
+  }
+
+  function updateLoopInfo(){
+    const total = getGlobalReps();
+    loopInfo.textContent = `第 ${repNow} / ${total} 遍`;
+  }
+
+  function resetPointer(redraw){
+    uiBeat=0; uiSub=0;
+    playBeat=0; playSub=0;
+    bigBeatTxt.textContent="1";
+    repNow=1;
+    updateLoopInfo();
+    if(redraw) drawJp();
+  }
+
+  function start(){
+    ensureAudio();
+    audio.resume?.();
+    if(running) return;
+    running=true;
+    syncPlayBtn();
+
+    activeIdx = playBoxIdx;
+    renderCards();
+    drawJp();
+
+    const now=audio.currentTime;
+    if(pausedAtT!=null){
+      const delta=now-pausedAtT;
+      pausedAtT=null;
+      beatStartT+=delta;
+      nextTickT+=delta;
+      loopOn();
+      return;
+    }
+    beatStartT=now;
+    nextTickT=now;
+    loopOn();
+  }
+
+  function pause(){
+    if(!running) return;
+    running=false;
+    syncPlayBtn();
+    pausedAtT=audio?audio.currentTime:(performance.now()/1000);
+    loopOff();
+    setRunState("暂停");
+    renderCards();
+  }
+
+  function togglePlay(){
+    running ? pause() : start();
+  }
+
+  function resetAll(){
+    pause();
+    pausedAtT=null;
+    playBoxIdx=activeIdx;
+    resetPointer(true);
+    setRunState("就绪");
+    renderCards();
+  }
+
+  function advanceToNextBox(){
+    playBoxIdx = (playBoxIdx + 1) % boxCount;
+    activeIdx = playBoxIdx;
+    repNow = 1;
+    resetPointer(false);
+    updateLoopInfo();
+    renderCards();
+    drawJp();
+  }
+
+  function scheduler(){
+    if(!running || !audio) return;
+
+    const beats = getGlobalBeats();
+    const reps  = getGlobalReps();
+    const sub   = boxes[playBoxIdx]?.sub ?? 1;
+
+    const now=audio.currentTime;
+
+    while(nextTickT < now + LOOKAHEAD){
+      const b=playBeat, s=playSub;
+
+      playClickAt(nextTickT, subCfg.freq, subCfg.ms, gSub);
+      if(s===0){
+        playClickAt(nextTickT, metroCfg.freq, metroCfg.ms, gMetro);
+      }
+
+      const dt=Math.max(0, nextTickT-now);
+      setTimeout(()=>{
+        uiBeat=b; uiSub=s;
+        bigBeatTxt.textContent=String(uiBeat+1);
+        drawJp();
+      }, dt*1000);
+
+      const bs=beatSec();
+
+      playSub++;
+      if(playSub>=sub){
+        playSub=0;
+        playBeat++;
+
+        if(playBeat>=beats){
+          playBeat=0;
+          repNow++;
+          if(repNow > reps){
+            advanceToNextBox();
+          }else{
+            updateLoopInfo();
+          }
+        }
+        beatStartT += bs;
+      }
+
+      nextTickT = beatStartT + playSub*(bs/sub);
+    }
+  }
+
+  // ===== BPM =====
+  function syncBpmUI(){
+    const bpm=getBpm();
+    bpmInp.value=bpm;
+    bpmPill.textContent=String(bpm);
+  }
+  bpmInp.addEventListener("change", ()=>{
+    syncBpmUI();
+    resetAll();
+  });
+
+  // ===== 全局拍数/遍数变化 =====
+  function syncGlobal(){
+    globalBeatsInp.value = getGlobalBeats();
+    globalRepsInp.value  = getGlobalReps();
+    resetAll();
+    drawJp();
+  }
+  globalBeatsInp.addEventListener("change", syncGlobal);
+  globalRepsInp.addEventListener("change", syncGlobal);
+
+  // ===== 框数变化 =====
+  function initBoxes(n, seed){
+    const arr = Array.isArray(seed) ? seed : null;
+    boxes=[];
+    for(let i=0;i<n;i++){
+      const sub = arr?.[i]?.sub ?? 1;
+      boxes.push({ sub: clamp(sub,1,8) });
+    }
+    boxCount=n;
+    activeIdx=0;
+    playBoxIdx=0;
+    resetAll();
+    renderCards();
+    drawJp();
+  }
+  boxCountSel.addEventListener("change", ()=>{
+    const n=clamp(+boxCountSel.value,1,8);
+    const keep = boxes.slice(0, n).map(b=>({sub:b.sub}));
+    while(keep.length < n) keep.push({sub:1});
+    initBoxes(n, keep);
+  });
+
+  // ===== 全局手法变化 =====
+  globalStickSel.addEventListener("change", ()=>{
+    stickMode = globalStickSel.value;
+    drawJp();
+  });
+
+  // ===== 按钮 =====
+  playToggle.addEventListener("click", togglePlay);
+  resetBtn.addEventListener("click", resetAll);
+
+  // ==========================
+  // ✅ 导出“带当前设置”的新HTML
+  // ==========================
+  function currentState(){
+    return {
+      v: 2,
+      savedAt: Date.now(),
+      bpm: getBpm(),
+      stickMode,
+      boxCount,
+      activeIdx,
+      playBoxIdx,
+      globalBeats: getGlobalBeats(),
+      globalReps: getGlobalReps(),
+      boxes: boxes.map(b=>({sub:b.sub}))
+    };
+  }
+
+  function pad2(n){ return String(n).padStart(2,"0"); }
+  function fileStamp(ts){
+    const d=new Date(ts);
+    return `${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}_${pad2(d.getHours())}${pad2(d.getMinutes())}${pad2(d.getSeconds())}`;
+  }
+
+  function exportHtml(){
+    if(!confirm("确认保存为一个新的HTML文件？（会下载一个带当前设置的版本）")) return;
+
+    const st = currentState();
+    const json = JSON.stringify(st);
+
+    let html = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+
+    html = html.replace(
+      /<script id="__SAVED_STATE__" type="application\/json">[\s\S]*?<\/script>/,
+      `<script id="__SAVED_STATE__" type="application/json">${json}<\/script>`
+    );
+
+    const blob = new Blob([html], {type:"text/html;charset=utf-8"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `时值细分练习_${fileStamp(st.savedAt)}.html`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  }
+  saveBtn.addEventListener("click", exportHtml);
+
+  // ===== ✅ 新文件打开时：读取内嵌状态作为默认 =====
+  function readEmbeddedState(){
+    const el = document.getElementById("__SAVED_STATE__");
+    if(!el) return null;
+    const txt = (el.textContent || "").trim();
+    if(!txt) return null;
+    try{
+      const st = JSON.parse(txt);
+      if(!st || !Array.isArray(st.boxes)) return null;
+      return st;
+    }catch(e){
+      return null;
+    }
+  }
+
+  // ===== 初始化 =====
+  function init(){
+    const emb = readEmbeddedState();
+
+    if(emb){
+      bpmInp.value = clamp(emb.bpm ?? 60, BPM_MIN, BPM_MAX);
+      syncBpmUI();
+
+      stickMode = emb.stickMode || "right";
+      globalStickSel.value = stickMode;
+
+      globalBeatsInp.value = clamp(emb.globalBeats ?? 4, 1, 8);
+      globalRepsInp.value  = clamp(emb.globalReps  ?? 1, 1, 8);
+
+      const n = clamp(emb.boxCount ?? emb.boxes.length ?? 8, 1, 8);
+      boxCountSel.value = String(n);
+      initBoxes(n, emb.boxes);
+
+      activeIdx  = clamp(emb.activeIdx ?? 0, 0, boxCount-1);
+      playBoxIdx = clamp(emb.playBoxIdx ?? 0, 0, boxCount-1);
+      repNow = 1;
+      resetPointer(false);
+    }else{
+      // 默认示例：8个框 sub 8..1（你可以随便改成任意数字）
+      const DEFAULT = [{sub:8},{sub:7},{sub:6},{sub:5},{sub:4},{sub:3},{sub:2},{sub:1}];
+
+      bpmInp.value = 60;
+      syncBpmUI();
+
+      globalBeatsInp.value = 4;
+      globalRepsInp.value  = 1;
+
+      stickMode = "right";
+      globalStickSel.value = stickMode;
+
+      boxCountSel.value = "8";
+      initBoxes(8, DEFAULT);
+
+      playBoxIdx=0;
+      activeIdx=0;
+      repNow=1;
+      resetPointer(false);
+    }
+
+    syncPlayBtn();
+    renderCards();
+    drawJp();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
