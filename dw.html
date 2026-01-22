@@ -10,6 +10,9 @@
       --line:rgba(255,255,255,.10);
       --shadow:0 12px 40px rgba(0,0,0,.35);
       --accent:#3a65ff;
+      --left-color:#3a65ff; /* 左圆指针颜色 */
+      --right-color:#ff6b6b; /* 右圆指针颜色 */
+      --pulse-color:#ffcc00; /* 转动的黄色点 */
     }
     *{box-sizing:border-box}
     body{
@@ -50,7 +53,7 @@
     .field{
       display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:14px;
       background:linear-gradient(180deg,#10172b,#0d1220);
-      color:var(--mut);font-weight:900;padding:6px 10px;
+      color:var(--mut);font-weight:900;padding:0px 6px;
     }
     input[type="number"]{
       width:92px;
@@ -97,87 +100,115 @@
       position:relative;
       overflow:hidden;
     }
-    .col h3{margin:0 0 10px 0; font-size:16px; letter-spacing:.5px}
+    .col h3{
+      margin:0 0 14px 0;
+      font-size:16px;
+      letter-spacing:.5px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .col h3::before{
+      content:"";
+      width:12px;
+      height:12px;
+      border-radius:50%;
+      display:inline-block;
+    }
+    #leftCol h3::before{background:var(--left-color)}
+    #rightCol h3::before{background:var(--right-color)}
+    
     .subRow{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
     .subBtns{display:flex; gap:8px; align-items:center}
     .mini{
-      width:42px;height:42px; padding:0;
+      width:28px;height:28px; padding:0;
       display:grid;place-items:center;
       font-size:18px; font-weight:1000;
     }
     .subVal{
-      font-size:26px; font-weight:1000;
+      font-size:14px; font-weight:1000;
       padding:6px 12px; border-radius:14px;
       border:1px solid var(--line);
       background:rgba(255,255,255,.03);
       min-width:64px; text-align:center;
     }
 
-    /* 视觉提示（可选，不影响核心） */
-    .track{
-      margin-top:14px;
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:16px;
-      background:linear-gradient(180deg,#0b1020,#070a12);
-      padding:12px;
-    }
-    .cells{
-      display:grid;
-      grid-template-columns: repeat(8, 1fr);
-      gap:8px;
-      align-items:center;
-    }
-    .cell{
-      height:34px;border-radius:12px;
-      border:1px solid rgba(255,255,255,.08);
-      background:rgba(255,255,255,.03);
-      display:grid;place-items:center;
-      color:rgba(233,236,243,.75);
-      font-weight:950;
-      transition:transform .08s ease, background .12s ease, border-color .12s ease;
-    }
-    .cell.off{ opacity:.25; filter:saturate(.6); }
-    .cell.hit{
-      border-color:rgba(58,101,255,.65);
-      background:rgba(58,101,255,.22);
-      transform:translateY(-1px);
-      opacity:1;
-    }
-    .swapCol{display:grid; place-items:center;}
-
-    /* 细分图形提示区 */
-    .shapeBar{
-      margin-top:12px;
-      border:1px solid var(--line);
-      border-radius:16px;
-      background:linear-gradient(180deg,#10172b,#0d1220);
-      box-shadow:var(--shadow);
-      padding:12px;
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:12px;
-      align-items:center;
-    }
-    .shapeCard{
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:16px;
-      background:rgba(255,255,255,.02);
-      padding:10px 12px;
+    /* 时钟圆盘区域 */
+    .clockContainer{
+      margin-top:16px;
       display:flex;
+      justify-content:center;
       align-items:center;
-      gap:12px;
+      height:200px;
     }
-    .shapeCard .lab{color:var(--mut);font-weight:950;white-space:nowrap}
-    .shapeWrap{
-      margin-left:auto;
-      width:68px;height:68px;
-      border-radius:16px;
-      border:1px solid rgba(255,255,255,.10);
-      background:linear-gradient(180deg,#0b1020,#070a12);
-      display:grid;place-items:center;
-      overflow:hidden;
+    .clock{
+      width:160px;
+      height:160px;
+      position:relative;
     }
-    .shapeWrap svg{width:64px;height:64px}
+    .clockBase{
+      position:absolute;
+      width:100%;
+      height:100%;
+      border-radius:50%;
+      border:1.5px solid rgba(255,255,255,0.15);
+      background:rgba(0,0,0,0.1);
+      display:flex;
+      justify-content:center;
+      align-items:center;
+    }
+    .centerNumber{
+      font-size:32px;
+      font-weight:900;
+      color:var(--ink);
+      text-shadow:0 2px 8px rgba(0,0,0,0.5);
+      opacity:0.85;
+      transition:all 0.15s ease;
+    }
+    .centerNumber.playing{
+      transform:scale(1.1);
+      color:currentColor;
+    }
+    .clockDot{
+      position:absolute;
+      width:14px;
+      height:14px;
+      border-radius:50%;
+      background:rgba(255,255,255,0.2);
+      transform:translate(-50%, -50%);
+      transition:all 0.15s ease;
+      border:2px solid rgba(255,255,255,0.4);
+    }
+    .clockDot.active{
+      background:currentColor;
+      border-color:currentColor;
+      box-shadow:0 0 8px currentColor;
+    }
+    .clockHand{
+      position:absolute;
+      width:22px;
+      height:22px;
+      border-radius:50%;
+      background:currentColor;
+      transform:translate(-50%, -50%);
+      transition:transform 0.08s linear;
+      z-index:10;
+      box-shadow:0 0 12px currentColor;
+    }
+    /* 转动的黄色点 */
+    .pulseDot{
+      position:absolute;
+      width:16px;
+      height:16px;
+      border-radius:50%;
+      background:var(--pulse-color);
+      transform:translate(-50%, -50%);
+      z-index:5;
+      box-shadow:0 0 10px var(--pulse-color);
+      opacity:0.9;
+    }
+    
+    .swapCol{display:grid; place-items:center;}
   </style>
 </head>
 
@@ -209,7 +240,6 @@
       <h3>左（L）</h3>
 
       <div class="subRow">
-        <span class="pill">细分</span>
         <div class="subBtns">
           <button class="mini" id="lMinus">−</button>
           <div class="subVal" id="lSubVal">4</div>
@@ -221,8 +251,14 @@
         </div>
       </div>
 
-      <div class="track" title="左列视觉提示（不影响核心对位精度）">
-        <div class="cells" id="lCells"></div>
+      <div class="clockContainer">
+        <div class="clock" id="lClock">
+          <div class="clockBase">
+            <div class="centerNumber" id="lCenterNumber" style="color:var(--left-color)">1</div>
+          </div>
+          <div class="clockHand" style="color:var(--left-color)"></div>
+          <div class="pulseDot"></div>
+        </div>
       </div>
     </div>
 
@@ -238,9 +274,7 @@
     <!-- Right -->
     <div class="col" id="rightCol">
       <h3>右（R）</h3>
-
       <div class="subRow">
-        <span class="pill">细分</span>
         <div class="subBtns">
           <button class="mini" id="rMinus">−</button>
           <div class="subVal" id="rSubVal">3</div>
@@ -252,23 +286,15 @@
         </div>
       </div>
 
-      <div class="track" title="右列视觉提示（不影响核心对位精度）">
-        <div class="cells" id="rCells"></div>
+      <div class="clockContainer">
+        <div class="clock" id="rClock">
+          <div class="clockBase">
+            <div class="centerNumber" id="rCenterNumber" style="color:var(--right-color)">1</div>
+          </div>
+          <div class="clockHand" style="color:var(--right-color)"></div>
+          <div class="pulseDot"></div>
+        </div>
       </div>
-    </div>
-  </div>
-
-  <!-- ✅ 细分图形提示：几细分 = 几边形（1=点，2=横线） -->
-  <div class="shapeBar">
-    <div class="shapeCard">
-      <div class="lab"></div>
-      <span class="pill" id="lShapeTxt">4</span>
-      <div class="shapeWrap" id="lShape"></div>
-    </div>
-    <div class="shapeCard">
-      <div class="lab"></div>
-      <span class="pill" id="rShapeTxt">3</span>
-      <div class="shapeWrap" id="rShape"></div>
     </div>
   </div>
 </div>
@@ -279,7 +305,7 @@
   const BPM_MIN=15, BPM_MAX=100;
   const SUB_MIN=1, SUB_MAX=8;
 
-  // 调度：用 WebAudio 绝对时间排程，保证“先对齐 Beat，再平均细分”
+  // 调度：用 WebAudio 绝对时间排程，保证"先对齐 Beat，再平均细分"
   const LOOKAHEAD=0.12;   // seconds
   const TICK=0.016;       // seconds
 
@@ -294,25 +320,23 @@
   const lPlus=document.getElementById('lPlus');
   const lSubVal=document.getElementById('lSubVal');
   const lHz=document.getElementById('lHz');
-  const lCells=document.getElementById('lCells');
+  const lClock=document.getElementById('lClock');
+  const lCenterNumber=document.getElementById('lCenterNumber');
 
   const rMinus=document.getElementById('rMinus');
   const rPlus=document.getElementById('rPlus');
   const rSubVal=document.getElementById('rSubVal');
   const rHz=document.getElementById('rHz');
-  const rCells=document.getElementById('rCells');
+  const rClock=document.getElementById('rClock');
+  const rCenterNumber=document.getElementById('rCenterNumber');
 
   const swapBtn=document.getElementById('swapBtn');
 
-  // 形状提示
-  const lShape=document.getElementById('lShape');
-  const rShape=document.getElementById('rShape');
-  const lShapeTxt=document.getElementById('lShapeTxt');
-  const rShapeTxt=document.getElementById('rShapeTxt');
-
   // ===== state =====
-  let L = { sub: 4 };
-  let R = { sub: 3 };
+  let L = { sub: 4, currentStep: 0 };
+  let R = { sub: 3, currentStep: 0 };
+  
+  let lastBeatTime = 0;
 
   let running=false;
   let timer=null;
@@ -354,89 +378,95 @@
 
   function setState(txt){ stateEl.textContent = txt; }
 
-  // ===== UI (视觉提示) =====
-  function buildCells(container){
-    container.innerHTML="";
-    for(let i=0;i<8;i++){
-      const d=document.createElement('div');
-      d.className='cell';
-      d.textContent = (i+1);
-      container.appendChild(d);
+  // ===== 时钟圆盘绘制 =====
+  function drawClock(container, subCount, side){
+    // 清空容器
+    container.querySelectorAll('.clockDot').forEach(dot => dot.remove());
+    
+    // 创建细分点 - 直接在圆边框上
+    for(let i = 0; i < subCount; i++){
+      const angle = (i * 2 * Math.PI) / subCount - Math.PI/2; // 从顶部开始
+      const radius = 50; // 半径设为50%，让点在边框上
+      const x = 50 + radius * Math.cos(angle);
+      const y = 50 + radius * Math.sin(angle);
+      
+      const dot = document.createElement('div');
+      dot.className = 'clockDot';
+      dot.style.left = `${x}%`;
+      dot.style.top = `${y}%`;
+      dot.style.color = side === 'L' ? 'var(--left-color)' : 'var(--right-color)';
+      container.appendChild(dot);
     }
   }
 
-  function flashCell(side, idx){
-    const cells = (side==="L") ? lCells.children : rCells.children;
-    if(idx>=0 && idx<cells.length){
-      const el=cells[idx];
-      el.classList.add('hit');
-      setTimeout(()=>el.classList.remove('hit'), 80);
-    }
+  function updateClockDisplay(container, centerNumber, currentStep, total, side){
+    const hand = container.querySelector('.clockHand');
+    if(!hand || total === 0) return;
+    
+    // 更新中心数字：显示当前播放的细分编号（从1开始）
+    const displayNumber = (currentStep % total) + 1; // 确保在1-total范围内
+    centerNumber.textContent = displayNumber;
+    centerNumber.style.color = side === 'L' ? 'var(--left-color)' : 'var(--right-color)';
+    
+    // 短暂放大效果
+    centerNumber.classList.add('playing');
+    setTimeout(() => centerNumber.classList.remove('playing'), 150);
+    
+    // 更新指针位置
+    const stepInCurrentBeat = currentStep % total;
+    const angle = stepInCurrentBeat * (2 * Math.PI / total) - Math.PI/2;
+    const radius = 50;
+    const x = 50 + radius * Math.cos(angle);
+    const y = 50 + radius * Math.sin(angle);
+    
+    hand.style.left = `${x}%`;
+    hand.style.top = `${y}%`;
+    
+    // 更新点的激活状态
+    updateDotsActiveState(container, stepInCurrentBeat, total, side);
   }
 
-  // ===== 形状绘制：几细分=几边形（1=点，2=横线） =====
-  function svgEl(tag, attrs={}){
-    const el=document.createElementNS("http://www.w3.org/2000/svg", tag);
-    for(const [k,v] of Object.entries(attrs)) el.setAttribute(k, String(v));
-    return el;
+  // 更新黄色转动的点（在圆圈线上，一拍转一圈）
+  function updatePulseDot(container, side){
+    const pulse = container.querySelector('.pulseDot');
+    if(!pulse || !running) return;
+    
+    // 黄色点角度：根据当前拍内时间计算，一拍转一圈
+    const timeSinceBeat = audio.currentTime - lastBeatTime;
+    const T = beatSec();
+    const pulseAngle = (timeSinceBeat / T) * 2 * Math.PI - Math.PI/2;
+    const radius = 50; // 在圆圈线上
+    const x = 50 + radius * Math.cos(pulseAngle);
+    const y = 50 + radius * Math.sin(pulseAngle);
+    
+    pulse.style.left = `${x}%`;
+    pulse.style.top = `${y}%`;
   }
 
-  function polygonPoints(n, cx, cy, r, rot=-Math.PI/2){
-    const pts=[];
-    for(let i=0;i<n;i++){
-      const a = rot + i*(2*Math.PI/n);
-      pts.push(`${(cx + r*Math.cos(a)).toFixed(2)},${(cy + r*Math.sin(a)).toFixed(2)}`);
-    }
-    return pts.join(" ");
+  // 更新点的激活状态
+  function updateDotsActiveState(container, currentStep, total, side){
+    const dots = container.querySelectorAll('.clockDot');
+    dots.forEach((dot, index) => {
+      if(index === currentStep) {
+        dot.classList.add('active');
+      } else {
+        dot.classList.remove('active');
+      }
+    });
   }
 
-  function drawShape(container, n){
-    container.innerHTML="";
-    const svg = svgEl("svg", {viewBox:"0 0 64 64", width:"64", height:"64"});
-    // 轻微发光底
-    const glow = svgEl("circle", {cx:"32", cy:"32", r:"22", fill:"rgba(58,101,255,0.08)"});
-    svg.appendChild(glow);
-
-    if(n<=1){
-      // 1：小圆点
-      svg.appendChild(svgEl("circle", {
-        cx:"32", cy:"32", r:"4.5",
-        fill:"#e9ecf3", opacity:"0.9"
-      }));
-    }else if(n===2){
-      // 2：横线（圆角）
-      svg.appendChild(svgEl("rect", {
-        x:"14", y:"30", width:"36", height:"4.8", rx:"2.4",
-        fill:"#e9ecf3", opacity:"0.9"
-      }));
-    }else{
-      // 3+：正多边形（描边）
-      const pts = polygonPoints(n, 32, 32, 18);
-      svg.appendChild(svgEl("polygon", {
-        points: pts,
-        fill:"rgba(233,236,243,0.10)",
-        stroke:"#e9ecf3",
-        "stroke-width":"2.5",
-        "stroke-linejoin":"round",
-        opacity:"0.95"
-      }));
-      // 小中心点增强识别
-      svg.appendChild(svgEl("circle", {cx:"32", cy:"32", r:"2.6", fill:"#e9ecf3", opacity:"0.75"}));
-    }
-
-    container.appendChild(svg);
-  }
-
-  function refreshCellsAndShapes(){
-    [...lCells.children].forEach((c,i)=> c.classList.toggle('off', i>=L.sub));
-    [...rCells.children].forEach((c,i)=> c.classList.toggle('off', i>=R.sub));
+  function refreshClocks(){
+    // 更新数字显示
     lSubVal.textContent = L.sub;
     rSubVal.textContent = R.sub;
-
-    lShapeTxt.textContent = String(L.sub);
-    rShapeTxt.textContent = String(R.sub);
-    drawShape(lShape, L.sub);
-    drawShape(rShape, R.sub);
+    
+    // 绘制时钟
+    drawClock(lClock, L.sub, 'L');
+    drawClock(rClock, R.sub, 'R');
+    
+    // 初始化显示
+    updateClockDisplay(lClock, lCenterNumber, 0, L.sub, 'L');
+    updateClockDisplay(rClock, rCenterNumber, 0, R.sub, 'R');
   }
 
   // ===== transport =====
@@ -448,12 +478,24 @@
     running=true;
     playTxt.textContent="暂停";
     setState("播放");
-
-    // “优先对好 beat”：每拍从 beatStartT 开始，两边都从 step=0 同时起
+    
     const now = audio.currentTime;
+    
+    // 重置状态
+    L.currentStep = 0;
+    R.currentStep = 0;
+    
+    // 设置第一拍的开始时间
     scheduler.beatStartT = now + 0.06;
-    scheduler.lStep = 0;
-    scheduler.rStep = 0;
+    scheduler.lNextIndex = 0;  // 左侧下一个要触发的细分索引
+    scheduler.rNextIndex = 0;  // 右侧下一个要触发的细分索引
+    scheduler.lLastShownStep = 0; // 左侧最后显示的细分
+    scheduler.rLastShownStep = 0; // 右侧最后显示的细分
+    lastBeatTime = scheduler.beatStartT;
+
+    // 初始显示
+    updateClockDisplay(lClock, lCenterNumber, 0, L.sub, 'L');
+    updateClockDisplay(rClock, rCenterNumber, 0, R.sub, 'R');
 
     if(timer) clearInterval(timer);
     timer = setInterval(scheduler, TICK*1000);
@@ -464,80 +506,127 @@
     running=false;
     playTxt.textContent="播放";
     setState("暂停");
+    
     if(timer){ clearInterval(timer); timer=null; }
   }
 
   function reset(){
     pause();
     delete scheduler.beatStartT;
-    delete scheduler.lStep;
-    delete scheduler.rStep;
+    delete scheduler.lNextIndex;
+    delete scheduler.rNextIndex;
+    delete scheduler.lLastShownStep;
+    delete scheduler.rLastShownStep;
+    
+    L.currentStep = 0;
+    R.currentStep = 0;
+    
     setState("就绪");
+    
+    // 重置显示到起始位置
+    updateClockDisplay(lClock, lCenterNumber, 0, L.sub, 'L');
+    updateClockDisplay(rClock, rCenterNumber, 0, R.sub, 'R');
   }
 
-  // ✅ 核心：严格对位（先对齐 Beat，再平均细分）
+  // ✅ 修正的核心逻辑
   function scheduler(){
     if(!running || !audio) return;
 
     const now = audio.currentTime;
     const T = beatSec();
 
-    if(typeof scheduler.beatStartT === "undefined"){
-      scheduler.beatStartT = now + 0.06;
-      scheduler.lStep = 0;
-      scheduler.rStep = 0;
+    // 更新黄色点位置
+    updatePulseDot(lClock, 'L');
+    updatePulseDot(rClock, 'R');
+
+    // 检查是否需要开始新的一拍
+    if(typeof scheduler.beatStartT !== "undefined" && now >= scheduler.beatStartT + T) {
+      // 开始新的一拍
+      scheduler.beatStartT += T;
+      scheduler.lNextIndex = 0;
+      scheduler.rNextIndex = 0;
+      lastBeatTime = scheduler.beatStartT;
+      
+      // 重置显示为第一细分
+      scheduler.lLastShownStep = 0;
+      scheduler.rLastShownStep = 0;
+      updateClockDisplay(lClock, lCenterNumber, 0, L.sub, 'L');
+      updateClockDisplay(rClock, rCenterNumber, 0, R.sub, 'R');
     }
 
     while(true){
-      const lSub = L.sub;
-      const rSub = R.sub;
-
-      const lNext = scheduler.beatStartT + scheduler.lStep * (T / lSub);
-      const rNext = scheduler.beatStartT + scheduler.rStep * (T / rSub);
-
-      const tNext = Math.min(lNext, rNext);
-      if(tNext >= now + LOOKAHEAD) break;
-
+      // 计算左右两侧的下一次触发时间
+      const lNextTime = scheduler.beatStartT + scheduler.lNextIndex * (T / L.sub);
+      const rNextTime = scheduler.beatStartT + scheduler.rNextIndex * (T / R.sub);
+      
+      // 取更早的时间
+      const nextTime = Math.min(lNextTime, rNextTime);
+      
+      // 如果时间太晚，跳出循环
+      if(nextTime >= now + LOOKAHEAD) break;
+      
       const eps = 1e-6;
-      const hitL = Math.abs(tNext - lNext) < eps;
-      const hitR = Math.abs(tNext - rNext) < eps;
-
-      const curL = hitL ? scheduler.lStep : null;
-      const curR = hitR ? scheduler.rStep : null;
-
+      const hitL = Math.abs(nextTime - lNextTime) < eps;
+      const hitR = Math.abs(nextTime - rNextTime) < eps;
+      
       if(hitL){
-        clickAt(tNext, clampNum(lHz.value,80,8000), 0.60, 18);
-        scheduler.lStep++;
+        // 左侧触发
+        // 当前显示的步骤应该是 lNextIndex
+        const displayStep = scheduler.lNextIndex;
+        scheduler.lLastShownStep = displayStep;
+        
+        // 更新L的当前步骤（用于数字显示）
+        L.currentStep = displayStep;
+        
+        // 先更新视觉
+        updateClockDisplay(lClock, lCenterNumber, displayStep, L.sub, 'L');
+        
+        // 播放声音
+        clickAt(nextTime, clampNum(lHz.value,80,8000), 0.60, 18);
+        
+        // 递增索引用于计算下一个触发
+        scheduler.lNextIndex++;
+        
+        // 如果左侧已经完成一拍的所有细分，等待右侧完成
+        if(scheduler.lNextIndex >= L.sub) {
+          // 左侧等待，不重置，直到一拍完全结束
+        }
       }
+      
       if(hitR){
-        clickAt(tNext, clampNum(rHz.value,80,8000), 0.45, 16);
-        scheduler.rStep++;
-      }
-
-      // 视觉闪烁（可选）
-      const dt = Math.max(0, (tNext - now));
-      setTimeout(() => {
-        if(hitL) flashCell("L", curL);
-        if(hitR) flashCell("R", curR);
-      }, dt * 1000);
-
-      // 一拍结束：左右都走完 -> 下一拍（再次保证拍头对齐）
-      if(scheduler.lStep >= lSub && scheduler.rStep >= rSub){
-        scheduler.beatStartT += T;
-        scheduler.lStep = 0;
-        scheduler.rStep = 0;
+        // 右侧触发
+        const displayStep = scheduler.rNextIndex;
+        scheduler.rLastShownStep = displayStep;
+        
+        R.currentStep = displayStep;
+        updateClockDisplay(rClock, rCenterNumber, displayStep, R.sub, 'R');
+        clickAt(nextTime, clampNum(rHz.value,80,8000), 0.45, 16);
+        scheduler.rNextIndex++;
+        
+        if(scheduler.rNextIndex >= R.sub) {
+          // 右侧等待
+        }
       }
     }
   }
 
   // ===== controls =====
   function realignNextBeat(){
-    // 改参数时：从“下一拍拍头”重新对齐，逻辑更清晰
     if(running && audio){
       const now = audio.currentTime;
       scheduler.beatStartT = now + 0.08;
-      scheduler.lStep = 0;
-      scheduler.rStep = 0;
+      scheduler.lNextIndex = 0;
+      scheduler.rNextIndex = 0;
+      scheduler.lLastShownStep = 0;
+      scheduler.rLastShownStep = 0;
+      lastBeatTime = scheduler.beatStartT;
+      
+      L.currentStep = 0;
+      R.currentStep = 0;
+      
+      // 立即更新显示
+      updateClockDisplay(lClock, lCenterNumber, 0, L.sub, 'L');
+      updateClockDisplay(rClock, rCenterNumber, 0, R.sub, 'R');
     }
   }
 
@@ -546,7 +635,11 @@
     if(side==="L") L.sub=v;
     else R.sub=v;
 
-    refreshCellsAndShapes();
+    // 如果当前步骤超过新细分，重置为0
+    if(L.currentStep >= L.sub) L.currentStep = 0;
+    if(R.currentStep >= R.sub) R.currentStep = 0;
+    
+    refreshClocks();
     realignNextBeat();
   }
 
@@ -560,12 +653,18 @@
     realignNextBeat();
   };
 
-  // ✅ 互换：只交换细分（音色Hz保持左右不变）
+  // ✅ 互换：只交换细分
   swapBtn.onclick=()=>{
     const tmpSub = L.sub; L.sub = R.sub; R.sub = tmpSub;
     L.sub = clampInt(L.sub, SUB_MIN, SUB_MAX);
     R.sub = clampInt(R.sub, SUB_MIN, SUB_MAX);
-    refreshCellsAndShapes();
+    
+    // 交换当前步骤，但要确保不超过细分范围
+    const tmpStep = L.currentStep;
+    L.currentStep = Math.min(R.currentStep, L.sub-1);
+    R.currentStep = Math.min(tmpStep, R.sub-1);
+    
+    refreshClocks();
     realignNextBeat();
   };
 
@@ -574,13 +673,12 @@
 
   // ===== init =====
   function init(){
-    buildCells(lCells);
-    buildCells(rCells);
-
     L.sub = 4;
     R.sub = 3;
-
-    refreshCellsAndShapes();
+    L.currentStep = 0;
+    R.currentStep = 0;
+    
+    refreshClocks();
     setState("就绪");
   }
   init();
