@@ -1,0 +1,1300 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>节拍器</title>
+  <style>
+    :root{
+      --bg:#000;
+      --panel:#070707;
+      --panel2:#0b0b0b;
+
+      --line:#ffffff;
+      --baseline:#ff1c1c;
+
+      --glow:rgba(255,255,255,.55);
+      --baselineGlow:rgba(255,28,28,.55);
+
+      --lineW:6px;
+      --baselineW:3px;
+
+      --marqueePos: 0px;
+
+      /* 彩虹渐变变量 */
+      --rainbow-gradient: linear-gradient(90deg,
+        #ff4444 0%,
+        #ffaa00 20%,
+        #00cc00 40%,
+        #0088ff 60%,
+        #aa44ff 80%,
+        #ff4444 100%);
+      --rainbow-gradient2: linear-gradient(90deg,
+        #ff0000, #ff5500, #ffaa00, #ffff00,
+        #aaff00, #55ff00, #00ff55, #00ffaa,
+        #00ffff, #00aaff, #0055ff, #5500ff,
+        #aa00ff, #ff00ff, #ff00aa, #ff0055);
+    }
+
+    html,body{
+      height:100%;
+      margin:0;
+      background:var(--bg);
+      overflow:hidden;
+      touch-action:none;
+      -webkit-tap-highlight-color:transparent;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    }
+
+    /* 关键：整页 flex，画布可伸缩；展开配置时画布会缩小让位 */
+    .app{
+      height:100vh;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start;
+      gap:12px;
+      padding:12px 10px 10px;
+      box-sizing:border-box;
+      overflow:hidden;
+    }
+
+    .stageWrap{
+      width:min(94vw, 460px);
+      flex: 1 1 0;           /* 可增长/可缩小 */
+      min-height: 0;         /* ★核心：允许被压缩，否则展开时不让位 */
+      border-radius:22px;
+      border:1px solid rgba(255,255,255,.06);
+      box-shadow: 0 0 0 1px rgba(255,255,255,.03) inset;
+      position:relative;
+      overflow:hidden;
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0));
+    }
+
+    .stage{
+      position:absolute;
+      inset:0;
+      /* 移除多余的径向渐变，只保留一个 */
+      background: #000;
+    }
+
+    /* 顶部信息栏 */
+    .top-info {
+      position: absolute;
+      top: 16px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 24px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .info-label {
+      font-size: 10px;
+      color: rgba(255,255,255,0.6);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .digital-display {
+      font-family: 'Courier New', 'Droid Sans Mono', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      color: #00ff9d;
+      text-shadow: 0 0 10px rgba(0, 255, 157, 0.5);
+      background: rgba(0, 0, 0, 0.4);
+      padding: 4px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(0, 255, 157, 0.2);
+      min-width: 50px;
+      text-align: center;
+    }
+
+    .baseline{
+      position:absolute;
+      left:8%;
+      right:8%;
+      height:var(--baselineW);
+      bottom:12%;
+      transform:translateY(50%);
+      border-radius:999px;
+      background: var(--baseline);
+      box-shadow:
+        0 0 10px var(--baselineGlow),
+        0 0 26px color-mix(in srgb, var(--baselineGlow) 70%, transparent);
+      opacity:.95;
+      will-change: filter;
+    }
+
+    .baseline.marquee{
+      background-image: linear-gradient(90deg,
+        color-mix(in srgb, var(--baseline) 90%, #fff 10%),
+        color-mix(in srgb, var(--baseline) 70%, #fff 30%),
+        color-mix(in srgb, var(--baseline) 90%, #fff 10%));
+      background-size: 160px 100%;
+      background-position: var(--marqueePos) 0;
+    }
+
+    .baseline.rainbow{
+      background-image: var(--rainbow-gradient);
+      background-size: 240px 100%;
+      background-position: var(--marqueePos) 0;
+    }
+
+    .baseline.flash{ animation:flash .12s ease-out 1; }
+    @keyframes flash{
+      0%{ filter:brightness(1) saturate(1.2); }
+      100%{ filter:brightness(2.6) saturate(2.2); }
+    }
+
+    .cursor{
+      position:absolute;
+      left:10%;
+      right:10%;
+      height:var(--lineW);
+      border-radius:999px;
+      background: var(--line);
+      box-shadow:
+        0 0 12px var(--glow),
+        0 0 36px color-mix(in srgb, var(--glow) 65%, transparent);
+      transform:translateY(-50%);
+      will-change: top, transform;
+      opacity:.98;
+    }
+
+    /* 光标样式：锥形 */
+    .cursor.tapered{
+      mask-image: linear-gradient(to right, 
+        transparent 0%, 
+        rgba(255,255,255,1) 20%, 
+        rgba(255,255,255,1) 80%, 
+        transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, 
+        transparent 0%, 
+        rgba(255,255,255,1) 20%, 
+        rgba(255,255,255,1) 80%, 
+        transparent 100%);
+    }
+
+    /* 光标样式：爱心 */
+    .cursor.heart {
+      background: transparent !important;
+      height: var(--lineW) !important;
+      box-shadow: none !important;
+      mask-image: none !important;
+      -webkit-mask-image: none !important;
+    }
+
+    .cursor.heart::before {
+      content: "❤";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size: calc(var(--lineW) * 1.8);
+      color: var(--line);
+      text-shadow: 0 0 12px var(--glow);
+      line-height: 1;
+    }
+
+    /* 光标样式：猫咪 */
+    .cursor.cat {
+      background: transparent !important;
+      height: var(--lineW) !important;
+      box-shadow: none !important;
+      mask-image: none !important;
+      -webkit-mask-image: none !important;
+    }
+
+    .cursor.cat::before {
+      content: "🐱";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size: calc(var(--lineW) * 1.8);
+      color: var(--line);
+      text-shadow: 0 0 12px var(--glow);
+      line-height: 1;
+    }
+
+    .cursor.marquee{
+      background-image: linear-gradient(90deg,
+        color-mix(in srgb, var(--line) 80%, #7df 20%),
+        color-mix(in srgb, var(--line) 80%, #f7d 20%),
+        color-mix(in srgb, var(--line) 80%, #7df 20%));
+      background-size: 140px 100%;
+      background-position: var(--marqueePos) 0;
+    }
+
+    .cursor.rainbow{
+      background-image: var(--rainbow-gradient2);
+      background-size: 420px 100%;
+      background-position: 0 0;
+      animation: rainbowMove 2s linear infinite;
+    }
+
+    @keyframes rainbowMove {
+      0% { background-position: 0px 0; }
+      100% { background-position: 420px 0; }
+    }
+
+    .controls{
+      width:min(94vw, 460px);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:14px;
+      user-select:none;
+      -webkit-user-select:none;
+      flex: 0 0 auto;
+    }
+
+    .disc{
+      width:92px;
+      height:92px;
+      border-radius:999px;
+      background:
+        radial-gradient(65% 65% at 50% 40%, rgba(255,255,255,.08), rgba(255,255,255,0) 60%),
+        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02)),
+        var(--panel);
+      border:1px solid rgba(255,255,255,.07);
+      box-shadow:
+        0 10px 30px rgba(0,0,0,.6),
+        0 0 0 1px rgba(255,255,255,.04) inset;
+      display:grid;
+      place-items:center;
+      position:relative;
+      overflow:hidden;
+      touch-action:manipulation;
+      flex: 0 0 auto;
+    }
+    .disc:active{ transform: translateY(1px) scale(.995); }
+
+    .disc .inner{
+      width:78px; height:78px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow: 0 0 0 1px rgba(255,255,255,.03) inset;
+      position:relative;
+      display:grid;
+      place-items:center;
+      background: radial-gradient(60% 60% at 50% 40%, rgba(255,255,255,.06), rgba(0,0,0,0) 62%);
+      overflow:hidden;
+    }
+
+    /* BPM 指针层：只旋转这个（文字不旋转） */
+    .knobRotator{
+      position:absolute;
+      inset:0;
+      transform: rotate(0deg);
+      transform-origin: 50% 50%;
+      pointer-events:none;
+    }
+    .knobPointer{
+      position:absolute;
+      width:2px;
+      height:28px;
+      top:6px;
+      left:50%;
+      transform:translateX(-50%);
+      border-radius:999px;
+      background:rgba(255,255,255,.85);
+      box-shadow: 0 0 10px rgba(255,255,255,.5);
+    }
+    .knobDot{
+      position:absolute;
+      width:8px; height:8px;
+      top:3px; left:50%;
+      transform:translateX(-50%);
+      border-radius:999px;
+      background:rgba(255,255,255,.9);
+      box-shadow: 0 0 14px rgba(255,255,255,.55);
+    }
+
+    .value{
+      font-size:22px;
+      font-weight:600;
+      color:rgba(255,255,255,.92);
+      text-shadow: 0 0 18px rgba(255,255,255,.25);
+      letter-spacing:.3px;
+      font-variant-numeric: tabular-nums;
+      position:relative;
+      z-index:2;
+    }
+
+    .iconBtn svg{
+      width:28px; height:28px;
+      opacity:.92;
+      filter: drop-shadow(0 0 10px rgba(255,255,255,.12));
+    }
+
+    .playGlow{
+      position:absolute;
+      inset:-30%;
+      background: radial-gradient(closest-side, rgba(255,255,255,.08), rgba(255,255,255,0) 70%);
+      opacity:.0;
+      transition:opacity .18s ease;
+      pointer-events:none;
+    }
+    .disc.playing .playGlow{ opacity:.9; }
+
+    .pulseRing{
+      position:absolute;
+      inset:-20%;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.08);
+      opacity:.0;
+      pointer-events:none;
+    }
+    .disc.pulse .pulseRing{ animation:pulse .22s ease-out 1; }
+    @keyframes pulse{
+      0%{ transform:scale(.92); opacity:.35; }
+      100%{ transform:scale(1.06); opacity:0; }
+    }
+
+    .config{
+      width:min(94vw, 460px);
+      border-radius:22px;
+      border:1px solid rgba(255,255,255,.07);
+      background:
+        radial-gradient(120% 120% at 50% -20%, rgba(255,255,255,.05), rgba(255,255,255,0) 60%),
+        linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015)),
+        var(--panel2);
+      box-shadow: 0 12px 34px rgba(0,0,0,.62), 0 0 0 1px rgba(255,255,255,.03) inset;
+      overflow:hidden;
+      flex: 0 0 auto;
+    }
+    .configTop{
+      height:46px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      cursor:pointer;
+      touch-action:manipulation;
+    }
+    .grab{
+      width:52px;
+      height:6px;
+      border-radius:999px;
+      background:rgba(255,255,255,.12);
+      box-shadow: 0 0 0 1px rgba(255,255,255,.06) inset;
+    }
+    .chev{
+      position:absolute;
+      right:14px;
+      width:18px; height:18px;
+      opacity:.75;
+      transform: rotate(0deg);
+      transition: transform .18s ease;
+      filter: drop-shadow(0 0 10px rgba(255,255,255,.12));
+    }
+    .config.open .chev{ transform: rotate(180deg); }
+
+    .configBody{
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height .26s ease;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,.2) rgba(0,0,0,.2);
+    }
+    .configBody::-webkit-scrollbar { width: 6px; }
+    .configBody::-webkit-scrollbar-track { background: rgba(0,0,0,.2); border-radius: 3px; }
+    .configBody::-webkit-scrollbar-thumb { background: rgba(255,255,255,.2); border-radius: 3px; }
+
+    .config.open .configBody{
+      max-height: 42vh;          /* 展开占屏幕比例（画布会自动缩小） */
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    @supports (height: 1dvh){
+      .config.open .configBody{ max-height: 42dvh; }
+    }
+
+    .panel{
+      padding:12px 14px 14px;
+      box-sizing:border-box;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .row{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      padding:10px 12px;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.07);
+      background: rgba(255,255,255,.03);
+      box-shadow: 0 0 0 1px rgba(255,255,255,.02) inset;
+    }
+
+    .rowTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    .label{
+      font-size:12px;
+      color:rgba(255,255,255,.82);
+      letter-spacing:.2px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      min-width:0;
+    }
+
+    .help{
+      font-size:11px;
+      color:rgba(255,255,255,.45);
+      line-height:1.25;
+    }
+
+    .helpbar{
+      height:6px;
+      border-radius:999px;
+      background: rgba(255,255,255,.10);
+      overflow:hidden;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.04) inset;
+    }
+    .helpbar > i{
+      display:block;
+      height:100%;
+      width:var(--p, 50%);
+      background: rgba(255,255,255,.26);
+      border-radius:999px;
+      box-shadow: 0 0 18px rgba(255,255,255,.08);
+    }
+
+    .ctrl{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .row select, .row input[type="color"]{
+      height:34px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.35);
+      color:rgba(255,255,255,.9);
+      outline:none;
+      padding:0 10px;
+      appearance:none;
+      -webkit-appearance:none;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.02) inset;
+    }
+    .row select{ padding-right:28px; }
+    .row input[type="color"]{
+      padding:0;
+      width:56px;
+      overflow:hidden;
+    }
+
+    .row input[type="range"]{
+      width:100%;
+      appearance:none;
+      -webkit-appearance:none;
+      height:4px;
+      border-radius:999px;
+      background: rgba(255,255,255,.16);
+      outline:none;
+      margin:0;
+    }
+    .row input[type="range"]::-webkit-slider-thumb{
+      -webkit-appearance:none;
+      width:18px; height:18px;
+      border-radius:999px;
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 0 0 2px rgba(0,0,0,.65), 0 0 16px rgba(255,255,255,.25);
+      border:none;
+    }
+
+    .miniVal{
+      font-size:12px;
+      color:rgba(255,255,255,.74);
+      font-variant-numeric: tabular-nums;
+      opacity:.9;
+      min-width:44px;
+      text-align:right;
+    }
+
+    @media (max-width: 360px){
+      .disc{ width:84px; height:84px; }
+      .disc .inner{ width:72px; height:72px; }
+      .config.open .configBody{ max-height: 46vh; }
+      .top-info { padding: 0 16px; }
+      .digital-display { font-size: 18px; padding: 3px 8px; }
+      .info-label { font-size: 9px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app" id="app">
+    <div class="stageWrap" id="stageWrap">
+      <div class="stage"></div>
+      <!-- 顶部信息显示 -->
+      <div class="top-info">
+        <div class="info-item">
+          <div class="info-label">BPM</div>
+          <div class="digital-display" id="topBpmValue">60</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">BEAT</div>
+          <div class="digital-display" id="topBeatValue">4</div>
+        </div>
+      </div>
+      <div class="cursor" id="cursor"></div>
+      <div class="baseline" id="baseline"></div>
+    </div>
+
+    <div class="controls">
+      <div class="disc" id="bpmDisc" aria-label="BPM">
+        <div class="pulseRing"></div>
+        <div class="inner">
+          <div class="knobRotator" id="knobRotator">
+            <div class="knobPointer"></div>
+            <div class="knobDot"></div>
+          </div>
+          <div class="value" id="bpmValue">60</div>
+        </div>
+      </div>
+
+      <div class="disc iconBtn" id="playDisc" aria-label="Play Stop">
+        <div class="pulseRing"></div>
+        <div class="playGlow"></div>
+        <div class="inner">
+          <svg id="playIcon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M9 7.5v9l8-4.5-8-4.5z" fill="rgba(255,255,255,.92)"/>
+          </svg>
+          <svg id="stopIcon" viewBox="0 0 24 24" fill="none" style="display:none" aria-hidden="true">
+            <rect x="8" y="8" width="8" height="8" rx="1.2" fill="rgba(255,255,255,.92)"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="disc" id="beatsDisc" aria-label="Beats">
+        <div class="pulseRing"></div>
+        <div class="inner">
+          <div class="value" id="beatsValue">4</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="config" id="config">
+      <div class="configTop" id="configTop" aria-label="Config">
+        <div class="grab"></div>
+        <svg class="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M6 10l6 6 6-6" stroke="rgba(255,255,255,.8)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <div class="configBody" id="configBody">
+        <div class="panel">
+          <!-- 新增：光标样式选择 -->
+          <div class="row">
+            <div class="rowTop">
+              <div class="label">光标样式</div>
+              <div class="ctrl">
+                <select id="cursorStyle">
+                  <option value="default">默认</option>
+                  <option value="tapered">锥形</option>
+                  <option value="heart">爱心</option>
+                  <option value="cat">猫咪</option>
+                </select>
+              </div>
+            </div>
+            <div class="help">选择光标的外观样式</div>
+            <div class="helpbar" id="helpCursorStyle"><i></i></div>
+          </div>
+
+          <div class="row">
+            <div class="rowTop">
+              <div class="label">变色模式</div>
+              <div class="ctrl">
+                <select id="colorMode">
+                  <option value="auto">自动变色</option>
+                  <option value="gradient">渐变变色</option>
+                  <option value="beat">卡点模式</option>
+                  <option value="marquee">跑马灯模式</option>
+                  <option value="rainbow">彩虹跑马灯</option>
+                </select>
+              </div>
+            </div>
+            <div class="help">卡点：每次响一下换色；第一拍更高：第一个声音和每个强拍之前那次跳跃更高。</div>
+            <div class="helpbar" id="helpColor"><i></i></div>
+          </div>
+
+          <div class="row">
+            <div class="rowTop">
+              <div class="label">颜色</div>
+              <div class="ctrl">
+                <input type="color" id="lineColor" value="#ffffff" />
+                <input type="color" id="baseColor" value="#ff1c1c" />
+              </div>
+            </div>
+            <div class="help">渐变/手动/卡点时使用；彩虹跑马灯会覆盖颜色外观。</div>
+            <div class="helpbar" id="helpPick"><i></i></div>
+          </div>
+
+          <div class="row">
+            <div class="rowTop">
+              <div class="label">跳跃模式</div>
+              <div class="ctrl">
+                <select id="jumpProfile">
+                  <option value="uniform">上下均匀</option>
+                  <option value="slowUpFastDown">上慢下快</option>
+                  <option value="firstBeatHigher">第一拍更高</option>
+                </select>
+              </div>
+            </div>
+            <div class="help">第一拍更高：强拍响声到来之前那次跳跃更高（含第一声）。</div>
+            <div class="helpbar" id="helpJump"><i></i></div>
+          </div>
+
+          <div class="row">
+            <div class="rowTop">
+              <div class="label">光标大小</div>
+              <div class="ctrl" style="flex:1; min-width:0;">
+                <input type="range" id="thickness" min="2" max="18" step="1" value="6" />
+              </div>
+              <div class="miniVal" id="thicknessVal">6</div>
+            </div>
+            <div class="helpbar" id="helpThick"><i></i></div>
+          </div>
+
+          <div class="row">
+            <div class="rowTop">
+              <div class="label">跳跃高度</div>
+              <div class="ctrl" style="flex:1; min-width:0;">
+                <input type="range" id="jumpHeight" min="60" max="600" step="1" value="300" />
+              </div>
+              <div class="miniVal" id="jumpHeightVal">300</div>
+            </div>
+            <div class="helpbar" id="helpHeight"><i></i></div>
+          </div>
+
+          <div class="row">
+            <div class="rowTop">
+              <div class="label">音色</div>
+              <div class="ctrl">
+                <select id="wave">
+                  <option value="sine">sine</option>
+                  <option value="triangle">triangle</option>
+                  <option value="square">square</option>
+                  <option value="sawtooth">sawtooth</option>
+                </select>
+              </div>
+            </div>
+            <div class="helpbar" id="helpWave"><i></i></div>
+          </div>
+
+          <div class="row">
+            <div class="rowTop">
+              <div class="label">音高</div>
+              <div class="ctrl" style="flex:1; min-width:0;">
+                <input type="range" id="pitch" min="200" max="2400" step="1" value="950" />
+              </div>
+              <div class="miniVal" id="pitchVal">950</div>
+            </div>
+            <div class="helpbar" id="helpPitch"><i></i></div>
+          </div>
+
+          <div class="row">
+            <div class="rowTop">
+              <div class="label">衰减</div>
+              <div class="ctrl" style="flex:1; min-width:0;">
+                <input type="range" id="decay" min="20" max="260" step="1" value="70" />
+              </div>
+              <div class="miniVal" id="decayVal">70</div>
+            </div>
+            <div class="helpbar" id="helpDecay"><i></i></div>
+          </div>
+
+          <div class="row">
+            <div class="rowTop">
+              <div class="label">噪声</div>
+              <div class="ctrl" style="flex:1; min-width:0;">
+                <input type="range" id="noise" min="0" max="1" step="0.01" value="0.15" />
+              </div>
+              <div class="miniVal" id="noiseVal">0.15</div>
+            </div>
+            <div class="helpbar" id="helpNoise"><i></i></div>
+          </div>
+
+          <div class="row">
+            <div class="rowTop">
+              <div class="label">发光</div>
+              <div class="ctrl" style="flex:1; min-width:0;">
+                <input type="range" id="glow" min="0" max="1" step="0.01" value="0.55" />
+              </div>
+              <div class="miniVal" id="glowVal">0.55</div>
+            </div>
+            <div class="helpbar" id="helpGlow"><i></i></div>
+          </div>
+
+          <div class="row">
+            <div class="rowTop">
+              <div class="label">红线粗细</div>
+              <div class="ctrl" style="flex:1; min-width:0;">
+                <input type="range" id="baseThick" min="1" max="10" step="1" value="3" />
+              </div>
+              <div class="miniVal" id="baseThickVal">3</div>
+            </div>
+            <div class="helpbar" id="helpBaseW"><i></i></div>
+          </div>
+
+          <div class="row">
+            <div class="rowTop">
+              <div class="label">音量</div>
+              <div class="ctrl" style="flex:1; min-width:0;">
+                <input type="range" id="vol" min="0" max="1" step="0.01" value="0.7" />
+              </div>
+              <div class="miniVal" id="volVal">0.70</div>
+            </div>
+            <div class="helpbar" id="helpVol"><i></i></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const setVar = (k,v) => document.documentElement.style.setProperty(k, v);
+  const clamp = (v,min,max) => Math.max(min, Math.min(max, v));
+
+  const stageWrap = $("stageWrap");
+  const cursor = $("cursor");
+  const baseline = $("baseline");
+  
+  // 顶部信息显示元素
+  const topBpmValue = $("topBpmValue");
+  const topBeatValue = $("topBeatValue");
+
+  const bpmDisc = $("bpmDisc");
+  const knobRotator = $("knobRotator");
+  const bpmValueEl = $("bpmValue");
+
+  const playDisc = $("playDisc");
+  const playIcon = $("playIcon");
+  const stopIcon = $("stopIcon");
+
+  const beatsDisc = $("beatsDisc");
+  const beatsValueEl = $("beatsValue");
+
+  const config = $("config");
+  const configTop = $("configTop");
+
+  // 新增：光标样式选择
+  const cursorStyle = $("cursorStyle");
+  const colorMode = $("colorMode");
+  const lineColor = $("lineColor");
+  const baseColor = $("baseColor");
+
+  const jumpProfile = $("jumpProfile");
+
+  const thickness = $("thickness");
+  const jumpHeight = $("jumpHeight");
+  const wave = $("wave");
+  const pitch = $("pitch");
+  const decay = $("decay");
+  const noise = $("noise");
+  const glow = $("glow");
+  const baseThick = $("baseThick");
+  const vol = $("vol");
+
+  const thicknessVal = $("thicknessVal");
+  const jumpHeightVal = $("jumpHeightVal");
+  const pitchVal = $("pitchVal");
+  const decayVal = $("decayVal");
+  const noiseVal = $("noiseVal");
+  const glowVal = $("glowVal");
+  const baseThickVal = $("baseThickVal");
+  const volVal = $("volVal");
+
+  const helpbars = [
+    ["helpCursorStyle", () => ({p: ({"default":25,"tapered":50,"heart":75,"cat":100}[cursorStyle.value]||25)})],
+    ["helpColor", () => ({p: ({"auto":20,"gradient":40,"beat":60,"marquee":80,"rainbow":100}[colorMode.value]||50)})],
+    ["helpPick", () => ({p: (colorMode.value==="gradient") ? 70 : 45})],
+    ["helpJump", () => ({p: ({"uniform":33,"slowUpFastDown":66,"firstBeatHigher":100}[jumpProfile.value]||33)})],
+    ["helpThick", () => ({p: ((+thickness.value-2)/(18-2))*100})],
+    ["helpHeight", () => ({p: ((+jumpHeight.value-60)/(600-60))*100})],
+    ["helpWave", () => ({p: ({"sine":25,"triangle":50,"square":75,"sawtooth":100}[wave.value]||25)})],
+    ["helpPitch", () => ({p: ((+pitch.value-200)/(2400-200))*100})],
+    ["helpDecay", () => ({p: ((+decay.value-20)/(260-20))*100})],
+    ["helpNoise", () => ({p: (+noise.value)*100})],
+    ["helpGlow", () => ({p: (+glow.value)*100})],
+    ["helpBaseW", () => ({p: ((+baseThick.value-1)/(10-1))*100})],
+    ["helpVol", () => ({p: (+vol.value)*100})],
+  ];
+
+  let bpm = 60;
+  let beats = 4;              // 0..8
+  let isRunning = false;
+
+  // audio
+  let audioCtx = null;
+  let noiseBuffer = null;
+
+  const ensureAudio = async () => {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") { try { await audioCtx.resume(); } catch {} }
+  };
+
+  const makeNoiseBuffer = () => {
+    const sr = audioCtx.sampleRate;
+    const length = Math.floor(sr * 0.05);
+    const buf = audioCtx.createBuffer(1, length, sr);
+    const data = buf.getChannelData(0);
+    for (let i=0;i<length;i++) data[i] = (Math.random()*2-1);
+    return buf;
+  };
+
+  const clickSound = async (accent=false) => {
+    await ensureAudio();
+    if (!noiseBuffer) noiseBuffer = makeNoiseBuffer();
+
+    const now = audioCtx.currentTime;
+
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.0001, now);
+
+    const volume = +vol.value;
+    const d = (+decay.value) / 1000;
+    const baseFreq = +pitch.value * (accent ? 1.12 : 1.0);
+
+    const osc = audioCtx.createOscillator();
+    osc.type = wave.value;
+    osc.frequency.setValueAtTime(baseFreq, now);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(60, baseFreq * 0.82), now + Math.min(d, 0.12));
+
+    const nm = +noise.value;
+    const nsrc = audioCtx.createBufferSource();
+    nsrc.buffer = noiseBuffer;
+    const nGain = audioCtx.createGain();
+    nGain.gain.setValueAtTime(nm * 0.9, now);
+    nGain.gain.exponentialRampToValueAtTime(0.0001, now + Math.max(0.02, d));
+
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, volume * (accent ? 1.0 : 0.9)), now + 0.002);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + Math.max(0.02, d));
+
+    const hp = audioCtx.createBiquadFilter();
+    hp.type = "highpass";
+    hp.frequency.setValueAtTime(550, now);
+
+    const lp = audioCtx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.setValueAtTime(6500, now);
+
+    osc.connect(hp);
+    nsrc.connect(nGain);
+    nGain.connect(hp);
+    hp.connect(lp);
+    lp.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start(now);
+    nsrc.start(now);
+    osc.stop(now + Math.max(0.03, d + 0.02));
+    nsrc.stop(now + Math.max(0.03, d + 0.02));
+  };
+
+  // color utils
+  function hexToRgba(hex, a){
+    const h = hex.replace('#','').trim();
+    const r = parseInt(h.slice(0,2), 16);
+    const g = parseInt(h.slice(2,4), 16);
+    const b = parseInt(h.slice(4,6), 16);
+    return `rgba(${r},${g},${b},${a})`;
+  }
+  function hslToHex(h, s, l){
+    h = (h % 360 + 360) % 360;
+    s = clamp(s,0,100)/100;
+    l = clamp(l,0,100)/100;
+    const c = (1 - Math.abs(2*l - 1))*s;
+    const x = c*(1 - Math.abs((h/60)%2 - 1));
+    const m = l - c/2;
+    let r=0,g=0,b=0;
+    if (h<60){ r=c; g=x; b=0; }
+    else if (h<120){ r=x; g=c; b=0; }
+    else if (h<180){ r=0; g=c; b=x; }
+    else if (h<240){ r=0; g=x; b=c; }
+    else if (h<300){ r=x; g=0; b=c; }
+    else { r=c; g=0; b=x; }
+    const R = Math.round((r+m)*255).toString(16).padStart(2,'0');
+    const G = Math.round((g+m)*255).toString(16).padStart(2,'0');
+    const B = Math.round((b+m)*255).toString(16).padStart(2,'0');
+    return `#${R}${G}${B}`;
+  }
+  function lerp(a,b,t){ return a + (b-a)*t; }
+  function hexToRgb(hex){
+    const h = hex.replace('#','').trim();
+    return { r: parseInt(h.slice(0,2),16), g: parseInt(h.slice(2,4),16), b: parseInt(h.slice(4,6),16) };
+  }
+  function rgbToHex({r,g,b}){
+    const R = clamp(Math.round(r),0,255).toString(16).padStart(2,'0');
+    const G = clamp(Math.round(g),0,255).toString(16).padStart(2,'0');
+    const B = clamp(Math.round(b),0,255).toString(16).padStart(2,'0');
+    return `#${R}${G}${B}`;
+  }
+  function mixHex(a,b,t){
+    const A = hexToRgb(a), B = hexToRgb(b);
+    return rgbToHex({ r: lerp(A.r,B.r,t), g: lerp(A.g,B.g,t), b: lerp(A.b,B.b,t) });
+  }
+
+  // current colors (关键：卡点变色不被每帧覆盖)
+  let currentLineHex = lineColor.value;
+  let currentBaseHex = baseColor.value;
+
+  const setColors = (lineHex, baseHex) => {
+    currentLineHex = lineHex;
+    currentBaseHex = baseHex;
+
+    setVar("--line", lineHex);
+    setVar("--baseline", baseHex);
+
+    const g = +glow.value;
+    setVar("--glow", hexToRgba(lineHex, g));
+    setVar("--baselineGlow", hexToRgba(baseHex, Math.min(0.95, 0.35 + g * 0.9)));
+  };
+
+  // visual settings
+  const applyVisualSettings = () => {
+    setVar("--lineW", `${+thickness.value}px`);
+    setVar("--baselineW", `${+baseThick.value}px`);
+    
+    // 应用光标样式
+    cursor.classList.remove("tapered", "heart", "cat");
+    if (cursorStyle.value === "tapered") {
+      cursor.classList.add("tapered");
+    } else if (cursorStyle.value === "heart") {
+      cursor.classList.add("heart");
+    } else if (cursorStyle.value === "cat") {
+      cursor.classList.add("cat");
+    }
+    
+    setColors(currentLineHex, currentBaseHex);
+  };
+
+  // 更新顶部显示
+  const updateTopDisplay = () => {
+    topBpmValue.textContent = bpm;
+    topBeatValue.textContent = beats;
+  };
+
+  // BPM knob
+  const bpmMin = 40, bpmMax = 200;
+  const angleMin = -135, angleMax = 135;
+  let knobDragging = false;
+
+  const bpmToAngle = (b) => {
+    const p = (b - bpmMin) / (bpmMax - bpmMin);
+    return angleMin + p * (angleMax - angleMin);
+  };
+  const angleToBpm = (deg) => {
+    const p = (deg - angleMin) / (angleMax - angleMin);
+    return Math.round(clamp(p,0,1) * (bpmMax - bpmMin) + bpmMin);
+  };
+
+  const updateKnob = () => {
+    bpmValueEl.textContent = bpm;
+    knobRotator.style.transform = `rotate(${bpmToAngle(bpm)}deg)`;
+    updateTopDisplay();
+  };
+
+  const pointerAngleFromEvent = (ev) => {
+    const rect = bpmDisc.getBoundingClientRect();
+    const cx = rect.left + rect.width/2;
+    const cy = rect.top + rect.height/2;
+    const x = (ev.touches ? ev.touches[0].clientX : ev.clientX) - cx;
+    const y = (ev.touches ? ev.touches[0].clientY : ev.clientY) - cy;
+    const rad = Math.atan2(y, x);
+    let deg = rad * 180 / Math.PI;
+    deg -= 90;
+    deg = ((deg + 540) % 360) - 180;
+    return clamp(deg, angleMin, angleMax);
+  };
+
+  const onKnobDown = (ev) => {
+    ev.preventDefault();
+    knobDragging = true;
+    bpmDisc.classList.add("pulse");
+    setTimeout(()=>bpmDisc.classList.remove("pulse"), 120);
+    const deg = pointerAngleFromEvent(ev);
+    bpm = angleToBpm(deg);
+    updateKnob();
+  };
+  const onKnobMove = (ev) => {
+    if (!knobDragging) return;
+    ev.preventDefault();
+    const deg = pointerAngleFromEvent(ev);
+    bpm = angleToBpm(deg);
+    updateKnob();
+  };
+  const onKnobUp = () => { knobDragging = false; };
+
+  bpmDisc.addEventListener("pointerdown", onKnobDown, {passive:false});
+  window.addEventListener("pointermove", onKnobMove, {passive:false});
+  window.addEventListener("pointerup", onKnobUp);
+
+  bpmDisc.addEventListener("touchstart", onKnobDown, {passive:false});
+  window.addEventListener("touchmove", onKnobMove, {passive:false});
+  window.addEventListener("touchend", onKnobUp, {passive:true});
+
+  // beats selector: 0-8 循环（含 1/2/3）
+  const nextBeats = () => {
+    beatsDisc.classList.add("pulse");
+    setTimeout(()=>beatsDisc.classList.remove("pulse"), 120);
+    beats = (beats + 1) % 9;        // 0..8
+    beatsValueEl.textContent = String(beats);
+    updateTopDisplay();
+  };
+  beatsDisc.addEventListener("click", (e)=>{ e.preventDefault(); nextBeats(); });
+  beatsDisc.addEventListener("pointerdown", async ()=>{ try{ await ensureAudio(); }catch{} }, {passive:true});
+
+  // play/stop
+  const setPlayingUI = () => {
+    playDisc.classList.toggle("playing", isRunning);
+    playIcon.style.display = isRunning ? "none" : "block";
+    stopIcon.style.display = isRunning ? "block" : "none";
+  };
+
+  let t0 = 0;
+  let lastHitInterval = 0; // 0 表示还没到第一声
+
+  const togglePlay = async () => {
+    playDisc.classList.add("pulse");
+    setTimeout(()=>playDisc.classList.remove("pulse"), 120);
+    await ensureAudio();
+
+    isRunning = !isRunning;
+
+    if (isRunning) {
+      t0 = performance.now();
+      lastHitInterval = 0;   // 第一声发生在 interval 1
+    }
+    setPlayingUI();
+  };
+
+  playDisc.addEventListener("click", (e)=>{ e.preventDefault(); togglePlay(); });
+  playDisc.addEventListener("pointerdown", async ()=>{ try{ await ensureAudio(); }catch{} }, {passive:true});
+
+  // config collapse：用 pointerdown 更稳（有些环境 click 会被手势干扰）
+  const toggleConfig = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    config.classList.toggle("open");
+    requestAnimationFrame(() => { stageWrap.getBoundingClientRect(); });
+  };
+  configTop.addEventListener("pointerdown", toggleConfig, {passive:false});
+  configTop.addEventListener("touchstart", toggleConfig, {passive:false});
+
+  // value UI
+  const updateMiniVals = () => {
+    thicknessVal.textContent = thickness.value;
+    jumpHeightVal.textContent = jumpHeight.value;
+    pitchVal.textContent = pitch.value;
+    decayVal.textContent = decay.value;
+    noiseVal.textContent = (+noise.value).toFixed(2);
+    glowVal.textContent = (+glow.value).toFixed(2);
+    baseThickVal.textContent = baseThick.value;
+    volVal.textContent = (+vol.value).toFixed(2);
+  };
+
+  const updateHelpBars = () => {
+    for (const [id, fn] of helpbars){
+      const el = $(id);
+      if (!el) continue;
+      const v = fn();
+      el.style.setProperty("--p", `${clamp(v.p,0,100)}%`);
+    }
+  };
+
+  // color modes state
+  let hue = 0;
+  let gradientPhase = 0;
+  let marqueePos = 0;
+  let beatHue = 0;
+
+  const applyColorModeClass = () => {
+    const m = colorMode.value;
+    cursor.classList.remove("marquee", "rainbow");
+    baseline.classList.remove("marquee", "rainbow");
+    if (m === "marquee") {
+      cursor.classList.add("marquee");
+      baseline.classList.add("marquee");
+    } else if (m === "rainbow") {
+      cursor.classList.add("rainbow");
+      baseline.classList.add("rainbow");
+    }
+  };
+
+  const randomBeatColor = () => {
+    beatHue = (beatHue + 47 + Math.random()*37) % 360;
+    const lineHex = hslToHex(beatHue, 0, 98);
+    const baseHex = hslToHex((beatHue + 350) % 360, 92, 55);
+    setColors(lineHex, baseHex);
+  };
+
+  // inputs
+  [
+    cursorStyle, thickness, jumpHeight, glow, baseThick,
+    wave, pitch, decay, noise, vol,
+    colorMode, lineColor, baseColor, jumpProfile
+  ].forEach(el => el.addEventListener("input", () => {
+    updateMiniVals();
+    updateHelpBars();
+    applyColorModeClass();
+
+    // 只在交互时写入颜色；beat 模式后续由拍点 randomBeatColor() 控制
+    setColors(lineColor.value, baseColor.value);
+
+    applyVisualSettings();
+  }));
+
+  // init
+  beatsValueEl.textContent = String(beats);
+  updateKnob();
+  setPlayingUI();
+  updateMiniVals();
+  updateHelpBars();
+  applyColorModeClass();
+  setColors(lineColor.value, baseColor.value);
+  applyVisualSettings();
+  updateTopDisplay();
+
+  // animation helpers
+  const baselineY = () => {
+    const rect = stageWrap.getBoundingClientRect();
+    const bottom = rect.height * 0.12;
+    return rect.height - bottom;
+  };
+
+  // easing
+  const easeInQuad = (t)=> t*t;
+  const easeOutCubic = (t)=> 1 - Math.pow(1-t, 3);
+
+  // 强拍判定（audibleIndex: 第0声/第beats声... 为强拍）
+  const isDownbeatAudible = (audibleIndex) => {
+    if (beats <= 0) return false;
+    return (audibleIndex % beats) === 0;
+  };
+
+  // 第一拍更高：第一个声音及每个强拍"到来之前的那次跳跃"更高
+  // intervalIndex=0 的跳跃对应"第一声到来之前"
+  const ampForInterval = (intervalIndex) => {
+    const H = +jumpHeight.value;
+    if (jumpProfile.value !== "firstBeatHigher") return H;
+    if (beats <= 0) return H;
+    const upcomingAudibleIndex = intervalIndex; // interval0 -> audible0(第一声)之前
+    return isDownbeatAudible(upcomingAudibleIndex) ? H * 1.28 : H;
+  };
+
+  const yFromProfile = (intervalIndex, phase01) => {
+    const base = baselineY();
+    const H = ampForInterval(intervalIndex);
+
+    if (jumpProfile.value === "slowUpFastDown") {
+      const p = phase01;
+      let q;
+      if (p < 0.5) q = easeInQuad(p / 0.5);
+      else q = 1 - easeOutCubic((p - 0.5) / 0.5);
+      return base - (H * q);
+    }
+
+    const q = Math.sin(Math.PI * phase01);
+    return base - (H * q);
+  };
+
+  const animate = (now) => {
+    requestAnimationFrame(animate);
+
+    const m = colorMode.value;
+
+    // 跑马灯位移
+    if (m === "marquee" || m === "rainbow") {
+      marqueePos = (marqueePos - 2.2) % 240;
+      setVar("--marqueePos", `${marqueePos}px`);
+    }
+
+    // 颜色更新（beat 模式不覆盖 currentLineHex/currentBaseHex）
+    if (m === "auto") {
+      hue = (hue + 0.55) % 360;
+      const lineHex = hslToHex(hue, 0, 98);
+      const baseHex = hslToHex((hue + 355) % 360, 92, 55);
+      setColors(lineHex, baseHex);
+    } else if (m === "gradient") {
+      gradientPhase += 0.012;
+      const t = (Math.sin(gradientPhase) * 0.5 + 0.5);
+      const lineHex = mixHex(lineColor.value, "#ffffff", 0.10);
+      const baseHex = mixHex(baseColor.value, lineColor.value, t * 0.55);
+      setColors(lineHex, baseHex);
+    } else if (m === "marquee" || m === "rainbow") {
+      // 外观由 CSS；glow 用拾色值
+      setColors(lineColor.value, baseColor.value);
+    } else if (m === "beat") {
+      // 保持当前颜色，等拍点切换
+      setColors(currentLineHex, currentBaseHex);
+    } else {
+      setColors(lineColor.value, baseColor.value);
+    }
+
+    const period = 60000 / bpm;
+
+    if (!isRunning) {
+      cursor.style.top = `${baselineY()}px`;
+      return;
+    }
+
+    const elapsed = now - t0;
+    const intervalIndex = Math.floor(elapsed / period);   // 0,1,2... 每段跳跃区间
+    const phase = (elapsed % period) / period;
+
+    cursor.style.top = `${yFromProfile(intervalIndex, phase)}px`;
+
+    // 声音发生在 interval 切换时：interval 1 -> 第0声（第一声）
+    if (intervalIndex !== lastHitInterval) {
+      if (intervalIndex > 0) {
+        const audibleIndex = intervalIndex - 1;
+        const accent = isDownbeatAudible(audibleIndex);
+
+        baseline.classList.remove("flash");
+        void baseline.offsetWidth;
+        baseline.classList.add("flash");
+
+        // 卡点模式：每次响一下换色
+        if (m === "beat") randomBeatColor();
+
+        clickSound(accent);
+      }
+      lastHitInterval = intervalIndex;
+    }
+  };
+
+  requestAnimationFrame(animate);
+
+  // 防止缩放手势
+  document.addEventListener("gesturestart", (e)=>e.preventDefault(), {passive:false});
+  document.addEventListener("dblclick", (e)=>e.preventDefault(), {passive:false});
+})();
+</script>
+</body>
+</html>
