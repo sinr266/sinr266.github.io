@@ -373,6 +373,8 @@
       box-shadow: 0 12px 34px rgba(0,0,0,.62), 0 0 0 1px rgba(255,255,255,.03) inset;
       overflow:hidden;
       flex: 0 0 auto;
+      /* 修复：确保配置区域可以正常接收点击 */
+      touch-action: manipulation;
     }
     .configTop{
       height:46px;
@@ -381,14 +383,32 @@
       justify-content:center;
       position:relative;
       cursor:pointer;
-      touch-action:manipulation;
+      /* 关键修复：允许触摸操作 */
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: rgba(255,255,255,0.1);
+      /* 增加点击区域 */
+      position: relative;
+      z-index: 10;
     }
+    /* 增加一个伪元素扩大点击区域 */
+    .configTop::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: -10px;
+      right: -10px;
+      bottom: -10px;
+      z-index: -1;
+    }
+    
     .grab{
       width:52px;
       height:6px;
       border-radius:999px;
       background:rgba(255,255,255,.12);
       box-shadow: 0 0 0 1px rgba(255,255,255,.06) inset;
+      /* 确保grab元素也可以被点击 */
+      pointer-events: none;
     }
     .chev{
       position:absolute;
@@ -398,6 +418,8 @@
       transform: rotate(0deg);
       transition: transform .18s ease;
       filter: drop-shadow(0 0 10px rgba(255,255,255,.12));
+      /* 确保图标也可以被点击 */
+      pointer-events: none;
     }
     .config.open .chev{ transform: rotate(180deg); }
 
@@ -1097,15 +1119,60 @@
   playDisc.addEventListener("click", (e)=>{ e.preventDefault(); togglePlay(); });
   playDisc.addEventListener("pointerdown", async ()=>{ try{ await ensureAudio(); }catch{} }, {passive:true});
 
-  // config collapse：用 pointerdown 更稳（有些环境 click 会被手势干扰）
+  // config collapse：修复安卓点击问题
+  let isConfigTouching = false;
+  let touchStartY = 0;
+  
   const toggleConfig = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    config.classList.toggle("open");
-    requestAnimationFrame(() => { stageWrap.getBoundingClientRect(); });
+    
+    // 如果是触摸事件，确保是轻触而不是滑动
+    if (e.type === 'touchstart') {
+      isConfigTouching = true;
+      touchStartY = e.touches[0].clientY;
+      return;
+    }
+    
+    if (e.type === 'touchmove' && isConfigTouching) {
+      // 如果垂直移动超过10px，认为是滑动而不是点击
+      const currentY = e.touches[0].clientY;
+      if (Math.abs(currentY - touchStartY) > 10) {
+        isConfigTouching = false;
+      }
+      return;
+    }
+    
+    if (e.type === 'touchend' && isConfigTouching) {
+      isConfigTouching = false;
+      // 确保是轻触而不是长按
+      if (e.changedTouches[0].clientY - touchStartY < 10) {
+        config.classList.toggle("open");
+        requestAnimationFrame(() => { stageWrap.getBoundingClientRect(); });
+      }
+      return;
+    }
+    
+    // 对于点击事件，直接切换
+    if (e.type === 'click' || e.type === 'pointerdown') {
+      config.classList.toggle("open");
+      requestAnimationFrame(() => { stageWrap.getBoundingClientRect(); });
+    }
   };
+
+  // 为configTop添加多种事件监听器以确保兼容性
+  configTop.addEventListener("click", toggleConfig, {passive:false});
   configTop.addEventListener("pointerdown", toggleConfig, {passive:false});
   configTop.addEventListener("touchstart", toggleConfig, {passive:false});
+  configTop.addEventListener("touchmove", toggleConfig, {passive:false});
+  configTop.addEventListener("touchend", toggleConfig, {passive:false});
+
+  // 阻止配置区域内的滚动事件冒泡
+  configBody.addEventListener('touchmove', (e) => {
+    if (config.classList.contains('open')) {
+      e.stopPropagation(); // 只在展开时阻止冒泡
+    }
+  }, {passive: false});
 
   // value UI
   const updateMiniVals = () => {
@@ -1294,6 +1361,15 @@
   // 防止缩放手势
   document.addEventListener("gesturestart", (e)=>e.preventDefault(), {passive:false});
   document.addEventListener("dblclick", (e)=>e.preventDefault(), {passive:false});
+  
+  // 添加一个简单的点击反馈
+  configTop.addEventListener('touchstart', () => {
+    configTop.style.opacity = '0.8';
+  });
+  
+  configTop.addEventListener('touchend', () => {
+    configTop.style.opacity = '1';
+  });
 })();
 </script>
 </body>
