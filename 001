@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>太常引·建康中秋夜为吕叔潜赋 · 辛弃疾</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', '华文楷体', 'KaiTi', 'Microsoft YaHei', serif;
+            background: #0b0e1a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 15px;
+        }
+
+        .ppt-container {
+            max-width: 1100px;
+            width: 100%;
+        }
+
+        .slide {
+            background: linear-gradient(145deg, #101624 0%, #1a2235 100%);
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -8px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(212, 175, 55, 0.2) inset;
+            margin-bottom: 40px;
+            padding: 30px 35px;
+            color: #f0e6d2;
+            border-left: 6px solid #d4af37;
+            transition: transform 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 220px;
+            height: 220px;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .slide:hover {
+            transform: scale(1.005);
+            box-shadow: 0 30px 60px -10px #000000, 0 0 0 1px #d4af37 inset;
+        }
+
+        .slide-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid rgba(212, 175, 55, 0.5);
+            padding-bottom: 12px;
+        }
+
+        .slide-header h2 {
+            font-size: 2rem;
+            font-weight: 500;
+            letter-spacing: 2px;
+            color: #f5e7b2;
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+            margin: 0;
+        }
+
+        .slide-header .icon {
+            font-size: 2.2rem;
+            filter: drop-shadow(0 0 8px gold);
+        }
+
+        .subhead {
+            font-size: 1.1rem;
+            color: #b8b8d0;
+            margin-top: -15px;
+            margin-bottom: 20px;
+            font-style: italic;
+            letter-spacing: 1px;
+        }
+
+        .slide-img {
+            width: 100%;
+            max-height: 190px;
+            object-fit: cover;
+            border-radius: 20px;
+            margin: 15px 0 18px 0;
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            box-shadow: 0 12px 25px -8px black;
+            transition: filter 0.3s;
+            filter: brightness(0.9) saturate(1.2);
+        }
+
+        .slide-img:hover {
+            filter: brightness(1.1) saturate(1.4);
+        }
+
+        .flex-row {
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+
+        .flex-col {
+            flex: 1 1 280px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            padding: 18px 20px;
+            border: 1px solid rgba(212, 175, 55, 0.25);
+            backdrop-filter: blur(4px);
+            margin-bottom: 15px;
+        }
+
+        .card h3 {
+            color: #d4af37;
+            font-size: 1.3rem;
+            font-weight: 400;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            border-left: 4px solid #d4af37;
+            padding-left: 12px;
+        }
+
+        .card p, .card li {
+            line-height: 1.7;
+            font-size: 1.05rem;
+            color: #ddd8ce;
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 5px;
+        }
+
+        li {
+            margin-bottom: 8px;
+            position: relative;
+            padding-left: 22px;
+        }
+
+        li::before {
+            content: "✦";
+            color: #d4af37;
+            position: absolute;
+            left: 0;
+            font-size: 0.9rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+            overflow: hidden;
+            font-size: 0.98rem;
+        }
+
+        th {
+            background: #1e2a3a;
+            color: #f5e7b2;
+            font-weight: 500;
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 2px solid #d4af37;
+            letter-spacing: 1px;
+        }
+
+        td {
+            padding: 11px 8px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+            color: #ccc8bc;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .rhythm {
+            font-size: 1.3rem;
+            line-height: 2.2;
+            text-align: center;
+            color: #f5e7b2;
+            letter-spacing: 2px;
+            font-weight: 400;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 30px;
+            border: 1px dashed #d4af37;
+        }
+
+        .rhythm span {
+            display: inline-block;
+        }
+
+        .highlight {
+            color: #ffd966;
+            font-weight: 600;
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+        }
+
+        .trans-box {
+            background: rgba(212, 175, 55, 0.05);
+            border-left: 6px solid #d4af37;
+            padding: 15px 20px;
+            border-radius: 12px;
+            font-size: 1.08rem;
+            line-height: 1.8;
+            color: #ece6d9;
+            margin: 10px 0;
+        }
+
+        .trans-box strong {
+            color: #d4af37;
+            font-weight: 400;
+        }
+
+        .blackboard {
+            font-family: 'Courier New', '华文楷体', monospace;
+            background: #0a0f1a;
+            border-radius: 20px;
+            padding: 22px;
+            border: 2px solid #d4af37;
+            color: #e9e0c7;
+            white-space: pre-wrap;
+            font-size: 1rem;
+            line-height: 1.9;
+            letter-spacing: 1px;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.2) inset;
+        }
+
+        .cover {
+            text-align: center;
+            background: radial-gradient(circle at 20% 20%, #1a2438, #070b12);
+        }
+
+        .cover h1 {
+            font-size: 3.2rem;
+            color: #f5e7b2;
+            text-shadow: 0 0 20px #d4af37, 0 0 40px #a67c00;
+            letter-spacing: 6px;
+            margin: 20px 0 10px;
+            font-weight: 500;
+        }
+
+        .cover h3 {
+            font-size: 1.8rem;
+            color: #c0b28b;
+            font-weight: 300;
+            letter-spacing: 8px;
+            margin-bottom: 25px;
+        }
+
+        .cover p {
+            font-size: 1.2rem;
+            color: #a89f8c;
+            margin-top: 20px;
+        }
+
+        .page-number {
+            text-align: right;
+            font-size: 0.85rem;
+            color: #6b6b7a;
+            margin-top: 18px;
+            border-top: 1px solid rgba(212, 175, 55, 0.2);
+            padding-top: 12px;
+            letter-spacing: 2px;
+        }
+
+        @media (max-width: 700px) {
+            .slide {
+                padding: 20px 18px;
+            }
+            .slide-header h2 {
+                font-size: 1.5rem;
+            }
+            .cover h1 {
+                font-size: 2.2rem;
+                letter-spacing: 3px;
+            }
+            .cover h3 {
+                font-size: 1.3rem;
+                letter-spacing: 4px;
+            }
+            .rhythm {
+                font-size: 1rem;
+                letter-spacing: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="ppt-container">
+
+    <!-- 幻灯片1：封面 -->
+    <div class="slide cover">
+        <div style="font-size: 3.5rem; margin-bottom: 10px;">🌕</div>
+        <h1>太常引</h1>
+        <h3>建康中秋夜为吕叔潜赋</h3>
+        <p style="font-size: 1.6rem; color: #d4af37; margin: 10px 0 5px;">辛弃疾</p>
+        <p>中秋月夜 · 神话意象 · 家国情怀</p>
+        <img class="slide-img" src="https://images.unsplash.com/photo-1532978379173-523e16f371f7?w=1000&q=80" alt="中秋明月与桂花" style="max-height: 200px; margin-top: 25px;">
+        <div class="page-number">1 / 12</div>
+    </div>
+
+    <!-- 幻灯片2：作者简介 -->
+    <div class="slide">
+        <div class="slide-header">
+            <span class="icon">📜</span>
+            <h2>作者简介</h2>
+        </div>
+        <div class="flex-row">
+            <div class="flex-col">
+                <div class="card">
+                    <h3>辛弃疾 (1140—1207)</h3>
+                    <ul>
+                        <li>字幼安，号稼轩，山东济南人</li>
+                        <li>南宋豪放派词人代表，与苏轼并称“苏辛”</li>
+                        <li>一生力主抗金，曾率义军南归</li>
+                        <li>南归后长期不受重用，屡遭排挤</li>
+                        <li>词风豪放悲壮，充满爱国情怀</li>
+                        <li>存词600余首，有《稼轩长短句》</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>关键词</h3>
+                    <p>爱国词人 · 豪放派 · 壮志难酬 · 词中之龙</p>
+                </div>
+            </div>
+            <div class="flex-col">
+                <img class="slide-img" src="https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&q=80" alt="古代文人意境">
+                <img class="slide-img" src="https://images.unsplash.com/photo-1505664194779-8beaceb93744?w=800&q=80" alt="南宋山水">
+            </div>
+        </div>
+        <div class="page-number">2 / 12</div>
+    </div>
+
+    <!-- 幻灯片3：写作背景 -->
+    <div class="slide">
+        <div class="slide-header">
+            <span class="icon">📅</span>
+            <h2>写作背景</h2>
+        </div>
+        <div class="flex-row">
+            <div class="flex-col">
+                <table>
+                    <tr><th style="width: 100px;">项目</th><th>内容</th></tr>
+                    <tr><td>时间</td><td>公元1174年（宋孝宗淳熙元年）中秋夜</td></tr>
+                    <tr><td>地点</td><td>建康（今江苏南京）</td></tr>
+                    <tr><td>对象</td><td>吕叔潜（辛弃疾友人）</td></tr>
+                    <tr><td>身份</td><td>任江东安抚司参议官</td></tr>
+                    <tr><td>处境</td><td>南归已十二年，屡次上书抗金未被采纳</td></tr>
+                </table>
+                <div class="card" style="margin-top: 10px;">
+                    <h3>背景要点</h3>
+                    <ul>
+                        <li>南宋朝廷偏安江南，主和派当权</li>
+                        <li>辛弃疾怀才不遇，壮志难酬</li>
+                        <li>中秋赏月，借词抒怀，寄赠友人</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="flex-col">
+                <img class="slide-img" src="https://images.unsplash.com/photo-1548263594-a71ea2a4b6f1?w=800&q=80" alt="古代地图与月亮">
+            </div>
+        </div>
+        <div class="page-number">3 / 12</div>
+    </div>
+
+    <!-- 幻灯片4：朗读节奏划分 -->
+    <div class="slide">
+        <div class="slide-header">
+            <span class="icon">🎵</span>
+            <h2>朗读节奏划分</h2>
+        </div>
+        <div class="rhythm">
+            <span>一轮 / 秋影 / 转 / 金波，飞镜 / 又 / 重磨。</span><br>
+            <span>把酒 / 问 / 姮娥：被 / 白发，欺人 / 奈何？</span><br>
+            <span>乘风 / 好去，长空 / 万里，直下 / 看 / 山河。</span><br>
+            <span>斫去 / 桂 / 婆娑，人道是，清光 / 更多。</span>
+        </div>
+        <div class="card" style="margin-top: 20px;">
+            <h3>朗读提示</h3>
+            <ul>
+                <li>上片：舒缓深沉，读出感慨</li>
+                <li>下片：激昂豪迈，读出气势</li>
+                <li>韵脚：波、磨、娥、何、去、里、河、娑、多</li>
+            </ul>
+        </div>
+        <img class="slide-img" src="https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=1000&q=80" alt="月光与波浪" style="margin-top: 10px;">
+        <div class="page-number">4 / 12</div>
+    </div>
+
+    <!-- 幻灯片5：全文翻译 -->
+    <div class="slide">
+        <div class="slide-header">
+            <span class="icon">🔍</span>
+            <h2>全文翻译</h2>
+        </div>
+        <div class="trans-box">
+            <strong>上片：</strong>一轮秋月洒下万里金波，如同刚磨亮的铜镜飞上夜空。我举杯问月中的嫦娥：白发渐多，怎奈我无力？
+        </div>
+        <div class="trans-box">
+            <strong>下片：</strong>我要乘风飞上万里长空，俯视祖国的大好河山。幻想砍去月中摇曳的桂树，因为人们说这样月光会更加明亮。
+        </div>
+        <div class="card">
+            <h3>翻译要点</h3>
+            <ul>
+                <li>“金波”指月光</li>
+                <li>“飞镜”喻月亮</li>
+                <li>“姮娥”即嫦娥</li>
+                <li>“斫去”即砍去</li>
+                <li>“桂婆娑”指桂树摇曳</li>
+            </ul>
+        </div>
+        <div class="page-number">5 / 12</div>
+    </div>
+
+    <!-- 幻灯片6：主要意象与象征意义 -->
+    <div class="slide">
+        <div class="slide-header">
+            <span class="icon">🌙</span>
+            <h2>主要意象与象征意义</h2>
+        </div>
+        <table>
+            <tr><th>意象</th><th>含义</th><th>象征意义</th></tr>
+            <tr><td>金波、飞镜</td><td>月光、月亮</td><td>时光流逝，岁月如梭</td></tr>
+            <tr><td>姮娥（嫦娥）</td><td>神话人物</td><td>借神话表达人生与理想感慨</td></tr>
+            <tr><td>白发</td><td>年老</td><td>岁月流逝，功业未成的无奈</td></tr>
+            <tr><td>乘风看山河</td><td>壮士情怀</td><td>远大志向与爱国情怀</td></tr>
+            <tr><td>桂婆娑</td><td>月中桂树</td><td>朝中奸佞与外敌势力</td></tr>
+            <tr><td>斫去桂树</td><td>砍树</td><td>扫除黑暗势力，追求政治清明</td></tr>
+        </table>
+        <div class="card" style="margin-top: 5px;">
+            <p><span class="highlight">核心象征：</span>扫除“桂婆娑”暗指清除投降派与奸佞，把光明带给人间。</p>
+        </div>
+        <img class="slide-img" src="https://images.unsplash.com/photo-1518391846015-55a9cc003b25?w=1000&q=80" alt="桂花与月影">
+        <div class="page-number">6 / 12</div>
+    </div>
+
+    <!-- 幻灯片7：艺术手法分析 -->
+    <div class="slide">
+        <div class="slide-header">
+            <span class="icon">✍️</span>
+            <h2>艺术手法分析</h2>
+        </div>
+        <div class="flex-row">
+            <div class="flex-col">
+                <div class="card">
+                    <h3>修辞手法</h3>
+                    <table>
+                        <tr><th>手法</th><th>例句</th><th>作用</th></tr>
+                        <tr><td>比喻</td><td>“飞镜又重磨”</td><td>将月亮比作新磨的铜镜，形象写出月光明亮</td></tr>
+                        <tr><td>拟人</td><td>“被白发，欺人奈何”</td><td>白发“欺人”，写尽无奈</td></tr>
+                        <tr><td>设问</td><td>“被白发，欺人奈何？”</td><td>自问自答，强化悲愤</td></tr>
+                        <tr><td>想象</td><td>“乘风好去，长空万里”</td><td>浪漫主义想象，展现壮阔胸怀</td></tr>
+                        <tr><td>象征</td><td>“斫去桂婆娑”</td><td>象征扫除奸佞，追求光明</td></tr>
+                    </table>
+                </div>
+            </div>
+            <div class="flex-col">
+                <div class="card">
+                    <h3>炼字赏析</h3>
+                    <ul>
+                        <li><span class="highlight">“转”</span>：写出月光流转的动态美</li>
+                        <li><span class="highlight">“磨”</span>：写出月亮如镜般明亮，暗含时光打磨之意</li>
+                        <li><span class="highlight">“欺”</span>：白发欺人，化被动为主动，写出岁月无情</li>
+                        <li><span class="highlight">“直下”</span>：写出俯视山河的豪迈气势</li>
+                        <li><span class="highlight">“斫”</span>：砍去，力度十足，体现决绝态度</li>
+                    </ul>
+                </div>
+                <img class="slide-img" src="https://images.unsplash.com/photo-1534237710431-e2fc698436d0?w=800&q=80" alt="书法与笔">
+            </div>
+        </div>
+        <div class="page-number">7 / 12</div>
+    </div>
+
+    <!-- 幻灯片8：情感与主旨 -->
+    <div class="slide">
+        <div class="slide-header">
+            <span class="icon">❤️</span>
+            <h2>情感与主旨</h2>
+        </div>
+        <div class="flex-row">
+            <div class="flex-col">
+                <div class="card">
+                    <h3>情感脉络</h3>
+                    <p><span class="highlight">上片：</span>把酒问月 → 感慨白发 → 怀才不遇、壮志难酬</p>
+                    <p><span class="highlight">下片：</span>乘风看山河 → 斫桂求光明 → 收复中原、政治理想</p>
+                </div>
+                <div class="card">
+                    <h3>主旨概括</h3>
+                    <p>本词通过中秋月夜与神话意象的巧妙结合，表达了词人：</p>
+                    <ul>
+                        <li>怀才不遇的感慨——白发渐多，功业未成</li>
+                        <li>收复中原的政治理想——乘风看山河，心系故土</li>
+                        <li>扫除黑暗势力的决心——斫去桂婆娑，追求光明</li>
+                        <li>浓厚的浪漫主义情怀——神话与现实交织，豪放与悲壮并存</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="flex-col">
+                <img class="slide-img" src="https://images.unsplash.com/photo-1504609773096-104ff2c73ba4?w=800&q=80" alt="山河与月亮">
+                <div class="card" style="margin-top: 5px;">
+                    <p><span class="highlight">核心主旨：</span>中秋月色、神话意象与现实政治理想的巧妙结合，体现辛弃疾豪放词风与爱国精神。</p>
+                </div>
+            </div>
+        </div>
+        <div class="page-number">8 / 12</div>
+    </div>
+
+    <!-- 幻灯片9：艺术特色总结 -->
+    <div class="slide">
+        <div class="slide-header">
+            <span class="icon">🎨</span>
+            <h2>艺术特色总结</h2>
+        </div>
+        <div class="flex-row">
+            <div class="flex-col">
+                <div class="card">
+                    <h3>1. 浪漫主义手法</h3>
+                    <p>通过神话构建超现实意境，乘风飞月、斫桂求光，想象瑰丽。</p>
+                </div>
+                <div class="card">
+                    <h3>2. 政治隐喻</h3>
+                    <p>表面写中秋赏月，实则表达反对妥协投降、收复中原的理想。</p>
+                </div>
+                <div class="card">
+                    <h3>3. 情感表达</h3>
+                    <p>上片抒怀，下片幻想直入月宫，体现坚强意志与爱国精神。</p>
+                </div>
+            </div>
+            <div class="flex-col">
+                <div class="card">
+                    <h3>4. 象征意义</h3>
+                    <p>“桂婆娑”暗指黑暗势力，“清光更多”象征政治清明。</p>
+                </div>
+                <div class="card">
+                    <h3>5. 风格特点</h3>
+                    <p>豪放悲壮，意境开阔；神话与现实交融，浪漫与爱国并存。</p>
+                </div>
+                <img class="slide-img" src="https://images.unsplash.com/photo-1535905557558-afc4877a26fc?w=800&q=80" alt="古典艺术">
+            </div>
+        </div>
+        <div class="page-number">9 / 12</div>
+    </div>
+
+    <!-- 幻灯片10：课堂小结与思考 -->
+    <div class="slide">
+        <div class="slide-header">
+            <span class="icon">📝</span>
+            <h2>课堂小结与思考</h2>
+        </div>
+        <div class="card">
+            <h3>小结</h3>
+            <p>《太常引》是辛弃疾中秋词的代表作，将中秋月色、神话意象与现实政治理想巧妙结合，体现了：</p>
+            <ul>
+                <li>豪放词风与浪漫主义色彩</li>
+                <li>怀才不遇、壮志难酬的心境</li>
+                <li>收复中原、扫除黑暗的爱国情怀</li>
+            </ul>
+        </div>
+        <div class="card">
+            <h3>思考题</h3>
+            <ul>
+                <li>“斫去桂婆娑”中的“桂”象征什么？表达了词人怎样的愿望？</li>
+                <li>本词如何将中秋月色与政治理想结合？</li>
+                <li>对比苏轼《水调歌头·明月几时有》，两首中秋词在情感与手法上有何异同？</li>
+            </ul>
+        </div>
+        <div class="card">
+            <h3>课后作业</h3>
+            <ul>
+                <li>背诵并默写全词</li>
+                <li>写一篇300字左右的赏析短文</li>
+            </ul>
+        </div>
+        <div class="page-number">10 / 12</div>
+    </div>
+
+    <!-- 幻灯片11：板书设计 -->
+    <div class="slide">
+        <div class="slide-header">
+            <span class="icon">🖋️</span>
+            <h2>板书设计</h2>
+        </div>
+        <div class="blackboard">
+太常引·建康中秋夜为吕叔潜赋
+        辛弃疾
+
+上片：秋影金波 → 飞镜重磨 → 问姮娥 → 白发欺人
+         （写景）    （比喻）    （神话）   （感慨）
+
+下片：乘风看山河 → 斫去桂婆娑 → 清光更多
+         （壮志）      （象征）      （理想）
+
+情感：怀才不遇 + 收复中原 + 扫除黑暗
+风格：豪放悲壮 · 浪漫主义 · 爱国情怀
+        </div>
+        <div class="page-number">11 / 12</div>
+    </div>
+
+    <!-- 幻灯片12：结束页 -->
+    <div class="slide cover" style="text-align: center;">
+        <div style="font-size: 3rem; margin-bottom: 10px;">🌕</div>
+        <h1 style="font-size: 2.8rem;">谢谢观看</h1>
+        <p style="font-size: 1.6rem; color: #d4af37; margin: 30px 0 15px; font-style: italic; letter-spacing: 2px;">
+            “乘风好去，长空万里，直下看山河。”
+        </p>
+        <p style="font-size: 1.3rem; color: #b0a88c;">——辛弃疾</p>
+        <img class="slide-img" src="https://images.unsplash.com/photo-1504333638930-c8787321eee0?w=1000&q=80" alt="明月山河" style="max-height: 180px; margin-top: 30px;">
+        <div class="page-number">12 / 12</div>
+    </div>
+
+</div>
+</body>
+</html>
