@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>鼓谱认识</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { height:100vh; display:flex; justify-content:center; background:#f0f2f5; font-family:system-ui,sans-serif; overflow:hidden; user-select:none; touch-action:manipulation; }
+  .app { width:100%; max-width:640px; height:100%; display:flex; flex-direction:column; }
+  .top-bar { display:flex; justify-content:space-between; align-items:center; background:#fff; padding:12px 20px; border-bottom:1px solid #eee; flex-wrap:wrap; gap:10px; }
+  .stats { display:flex; gap:20px; transition:opacity .3s; }
+  .stat { text-align:center; font-size:13px; color:#888; }
+  .stat strong { display:block; font-size:22px; margin-top:4px; }
+  .blue { color:#3498db; } .green { color:#2ecc71; } .purple { color:#9b59b6; }
+  .actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .btn { border:none; border-radius:6px; padding:8px 16px; font-size:14px; font-weight:bold; color:#fff; cursor:pointer; transition:all .2s; }
+  .btn:active { transform:scale(.95); }
+  .btn-primary { background:#3498db; } .btn-secondary { background:#95a5a6; } .btn-mode { background:#9b59b6; }
+  .btn-mode.learn-active { background:#f39c12; }
+  .staff-area { display:flex; justify-content:center; padding:20px 16px; }
+  .staff-card { background:#fff; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,.06); padding:10px; width:100%; max-width:440px; display:flex; justify-content:center; }
+  .matrix-area { flex:1; display:grid; grid-template-columns:repeat(4,1fr); gap:6px; padding:0 16px 20px; align-content:start; }
+  .cell { background:#f0f8ff; border:2px solid #3498db; border-radius:6px; padding:8px 4px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; transition:all .15s; min-height:55px; position:relative; }
+  .cell:hover:not(.empty):not(.locked) { background:#e3f2fd; transform:translateY(-2px); box-shadow:0 4px 8px rgba(52,152,219,.2); }
+  .cell.active { background:#3498db !important; transform:translateY(-1px); }
+  .cell.correct { background:#2ecc71 !important; border-color:#27ae60 !important; }
+  .cell.wrong { background:#e74c3c !important; border-color:#c0392b !important; }
+  .cell.correct .cn, .cell.correct .en, .cell.wrong .cn, .cell.wrong .en, .cell.active .cn, .cell.active .en { color:#fff !important; }
+  .cell.empty { background:#fafafa; border-color:#f5f5f5; cursor:default; pointer-events:none; }
+  .cell.empty .cn, .cell.empty .en { color:#f5f5f5; }
+  .cell.locked { background:#f0f2f5; border-color:#d0d5d9; }
+  .cell.locked::after { content:'🔒'; font-size:18px; opacity:.6; }
+  .cell.locked .cn, .cell.locked .en { display:none; }
+  .cn { font-size:14px; font-weight:bold; color:#2c3e50; margin-bottom:2px; }
+  .en { font-size:10px; color:#666; opacity:.8; }
+  .toast { position:absolute; top:15%; left:50%; transform:translate(-50%,-20px); background:rgba(44,62,80,.9); color:#fff; padding:10px 20px; border-radius:8px; font-weight:bold; opacity:0; pointer-events:none; transition:all .3s; z-index:100; box-shadow:0 8px 24px rgba(0,0,0,.2); }
+  .toast.show { opacity:1; transform:translate(-50%,0); }
+  @media(max-width:480px) { .top-bar{flex-direction:column;align-items:stretch;padding:10px;} .stats{justify-content:space-around;} .actions{justify-content:center;} }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top-bar">
+    <div class="stats" id="stats-panel">
+      <div class="stat">已答题数<strong id="st-t" class="blue">0</strong></div>
+      <div class="stat">答对<strong id="st-c" class="green">0</strong></div>
+      <div class="stat">正确率<strong id="st-a" class="purple">0%</strong></div>
+    </div>
+    <div class="actions">
+      <button id="btn-mode" class="btn btn-mode">学习模式</button>
+      <button id="btn-next" class="btn btn-primary">出题</button>
+      <button id="btn-end" class="btn btn-secondary"></button>
+      <button id="btn-home" class="btn btn-secondary">首页</button>
+    </div>
+  </div>
+  <div class="staff-area"><div class="staff-card"><canvas id="staff"></canvas></div></div>
+  <div id="matrix" class="matrix-area"></div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+(() => {
+  const I = {
+    crash1:{n:'吊镲1',e:'Crash 1',p:-1,x:1}, crash2:{n:'吊镲2',e:'Crash 2',p:-1,x:1},
+    hihat:{n:'踩镲',e:'Hi-hat',p:-.5,x:1},   hightom:{n:'高音嗵鼓',e:'Hi-Tom',p:.5,x:0},
+    midtom:{n:'中音嗵鼓',e:'Mid-Tom',p:1,x:0}, ride:{n:'叮叮镲',e:'Ride',p:0,x:1},
+    snare:{n:'军鼓',e:'Snare',p:1.5,x:0},    floortom:{n:'地嗵鼓',e:'Floor Tom',p:2.5,x:0},
+    pedal:{n:'踩镲踏板',e:'Hi-hat Pedal',p:4,x:1}, kick:{n:'底鼓踏板',e:'Kick Pedal',p:3.5,x:0}
+  };
+  const G = [[null,'crash1',null,'crash2'], ['hihat','hightom','midtom','ride'], [null,'snare',null,'floortom'], ['pedal',null,'kick',null]];
+  const U = ['snare','kick','hihat','hightom','midtom','floortom','pedal','ride','crash1','crash2'];
+
+  const S = { mode:'p', c:0, w:0, u:['snare','kick','hihat'], q:null, lock:0 };
+  const $ = id => document.getElementById(id);
+  const cnv = $('staff'), ctx = cnv.getContext('2d'), dpr = window.devicePixelRatio || 1;
+
+  /* --- 音频引擎 (极简版) --- */
+  let audio, master;
+  const initAudio = () => {
+    if (!audio) { audio = new (window.AudioContext||window.webkitAudioContext)(); master = audio.createGain(); master.gain.value = 0.8; master.connect(audio.destination); }
+    if (audio.state === 'suspended') audio.resume();
+  };
+  const play = (id) => {
+    initAudio(); if (!audio) return;
+    const t = audio.currentTime;
+    const noise = (dur) => { const b = audio.createBuffer(1, audio.sampleRate*dur, audio.sampleRate); const d = b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; const s=audio.createBufferSource(); s.buffer=b; s.start(t); return s; };
+    const osc = (type, f1, f2, dur, vol) => { const o=audio.createOscillator(), g=audio.createGain(); o.type=type; o.frequency.setValueAtTime(f1,t); if(f2) o.frequency.exponentialRampToValueAtTime(f2,t+dur); g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.001,t+dur); o.connect(g).connect(master); o.start(t); o.stop(t+dur); };
+    const filt = (type, freq, q=1) => { const f=audio.createBiquadFilter(); f.type=type; f.frequency.value=freq; f.Q.value=q; return f; };
+
+    if (id==='kick') osc('sine',150,55,.14,.9);
+    else if (id==='snare') { const n=noise(.15), g=audio.createGain(); g.gain.setValueAtTime(.6,t); g.gain.exponentialRampToValueAtTime(.001,t+.12); n.connect(filt('bandpass',1800,.7)).connect(g).connect(master); }
+    else if (id==='hihat' || id==='pedal') { const n=noise(.1), g=audio.createGain(); g.gain.setValueAtTime(id==='hihat'?.4:.3,t); g.gain.exponentialRampToValueAtTime(.001,t+.06); n.connect(filt('highpass',id==='hihat'?6500:4500)).connect(g).connect(master); }
+    else if (id.includes('tom')) { const f = id==='hightom'?320:id==='midtom'?240:160; osc('sine',f,f*.6,.25,.7); }
+    else if (id.includes('crash')) { const n=noise(.8), g=audio.createGain(); g.gain.setValueAtTime(.5,t); g.gain.exponentialRampToValueAtTime(.001,t+.8); n.connect(filt('highpass',3800)).connect(g).connect(master); }
+    else if (id==='ride') [1,2.76,5.4,8.93].forEach((r,i) => osc('sine',1000*r,null,.5/r,.3/r));
+  };
+  const sfx = (type) => {
+    initAudio(); if(!audio) return;
+    const t = audio.currentTime;
+    if (type==='ok') [784,1047].forEach((f,i)=> { const o=audio.createOscillator(),g=audio.createGain(); o.type='sine'; o.frequency.value=f; g.gain.setValueAtTime(.001,t+i*.07); g.gain.exponentialRampToValueAtTime(.15,t+i*.07+.015); g.gain.exponentialRampToValueAtTime(.001,t+i*.07+.2); o.connect(g).connect(master); o.start(t+i*.07); o.stop(t+i*.07+.22); });
+    if (type==='err') { const o=audio.createOscillator(),g=audio.createGain(); o.type='sawtooth'; o.frequency.setValueAtTime(185,t); o.frequency.exponentialRampToValueAtTime(88,t+.24); g.gain.setValueAtTime(.001,t); g.gain.exponentialRampToValueAtTime(.12,t+.02); g.gain.exponentialRampToValueAtTime(.001,t+.3); o.connect(g).connect(master); o.start(t); o.stop(t+.34); }
+  };
+
+  /* --- UI 更新 --- */
+  const draw = (id) => {
+    cnv.width=360*dpr; cnv.height=180*dpr; cnv.style.width='360px'; cnv.style.height='180px';
+    ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,360,180);
+    const gap=24, y1=56;
+    ctx.strokeStyle='#2c3e50'; ctx.lineWidth=2;
+    for(let i=0;i<5;i++){ ctx.beginPath(); ctx.moveTo(30,y1+i*gap); ctx.lineTo(330,y1+i*gap); ctx.stroke(); }
+    ctx.lineWidth=3.5; ctx.beginPath(); ctx.moveTo(42,y1+4); ctx.lineTo(42,y1+4*gap-4); ctx.moveTo(54,y1+4); ctx.lineTo(54,y1+4*gap-4); ctx.stroke();
+    if(!id) return;
+    const item = I[id], nx=180, ny=y1+item.p*gap;
+    if(item.p===-1){ ctx.strokeStyle='#95a5a6'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(nx-22,y1-gap); ctx.lineTo(nx+22,y1-gap); ctx.stroke(); }
+    ctx.strokeStyle=item.x?'#3498db':'#e74c3c'; ctx.fillStyle='#e74c3c'; ctx.lineWidth=4; ctx.lineCap='round';
+    if(item.x){ ctx.beginPath(); ctx.moveTo(nx-9,ny-9); ctx.lineTo(nx+9,ny+9); ctx.moveTo(nx+9,ny-9); ctx.lineTo(nx-9,ny+9); ctx.stroke(); }
+    else { ctx.beginPath(); ctx.arc(nx,ny,10,0,7); ctx.fill(); }
+  };
+  const updStats = () => { const tot=S.c+S.w; $('st-t').innerText=tot; $('st-c').innerText=S.c; $('st-a').innerText=(tot?Math.round(S.c/tot*100):0)+'%'; };
+  const updUI = () => {
+    $('btn-mode').innerText = S.mode==='p' ? '学习模式' : '练习模式';
+    $('btn-mode').classList.toggle('learn-active', S.mode==='l');
+    $('btn-next').style.display = $('btn-end').style.display = S.mode==='p'?'inline-block':'none';
+    $('stats-panel').style.opacity = S.mode==='p'?'1':'0.3';
+    document.querySelectorAll('.cell').forEach(c => { if(c.dataset.id) c.classList.toggle('locked', S.mode==='p' && !S.u.includes(c.dataset.id)); });
+  };
+  const toast = (msg) => { $('toast').innerText=msg; $('toast').classList.add('show'); setTimeout(()=>$('toast').classList.remove('show'),2000); };
+
+  /* --- 核心逻辑 --- */
+  const next = () => {
+    if(S.lock || S.mode==='l') return;
+    let q; do { q = S.u[Math.floor(Math.random()*S.u.length)]; } while (S.u.length>1 && (q.includes('crash') && (S.q||'').includes('crash') || q===S.q));
+    S.q = q; draw(q); document.querySelectorAll('.cell').forEach(c=>c.classList.remove('correct','wrong','active'));
+  };
+
+  const tap = (id, cell) => {
+    initAudio(); play(id); cell.classList.add('active'); setTimeout(()=>cell.classList.remove('active'), 200);
+    
+    if (S.mode === 'l') { draw(id); return; }
+    if (!S.u.includes(id)) return;
+    if (!S.q || S.lock) return;
+    S.lock = 1;
+
+    const isOk = (id.includes('crash') && S.q.includes('crash')) || (id === S.q);
+    if (isOk) {
+      S.c++; cell.classList.add('correct'); sfx('ok');
+      if (S.c % 3 === 0) { const un = U[S.u.length]; if (un) { S.u.push(un); sfx('ok'); toast(`🔓 解锁: ${I[un].n}`); updUI(); } }
+      setTimeout(() => { S.lock = 0; next(); }, 800);
+    } else {
+      S.w++; cell.classList.add('wrong'); sfx('err');
+      document.querySelectorAll('.cell').forEach(c => { if(c.dataset.id && (c.dataset.id===S.q || (S.q.includes('crash') && c.dataset.id.includes('crash')))) c.classList.add('correct'); });
+      setTimeout(() => { S.lock = 0; next(); }, 1200);
+    }
+    updStats();
+  };
+
+  /* --- 初始化 --- */
+  G.forEach(row => row.forEach(id => {
+    const c = document.createElement('div');
+    c.className = 'cell' + (id ? '' : ' empty');
+    if (id) { c.innerHTML = `<div class="cn">${I[id].n}</div><div class="en">${I[id].e}</div>`; c.dataset.id = id; c.onclick = () => tap(id, c); }
+    else c.innerHTML = `<div class="cn">空白</div><div class="en">Empty</div>`;
+    $('matrix').appendChild(c);
+  }));
+
+  $('btn-mode').onclick = () => { S.mode = S.mode==='p'?'l':'p'; S.q=null; S.lock=0; draw(null); document.querySelectorAll('.cell').forEach(c=>c.classList.remove('correct','wrong','active')); updUI(); if(S.mode==='p') next(); };
+  $('btn-next').onclick = () => { S.lock=0; next(); };
+  $('btn-end').onclick = () => { if(confirm('确定重置所有分数和解锁进度吗？')) { S.c=0; S.w=0; S.u=['snare','kick','hihat']; S.q=null; S.lock=0; updStats(); updUI(); draw(null); } };
+  $('btn-home').onclick = () => { window.location.href = 'http://sinr266.github.io'; };
+
+  updStats(); updUI(); draw(null); setTimeout(next, 300);
+})();
+</script>
+</body>
+</html>
